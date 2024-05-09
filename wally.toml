@@ -1,0 +1,15 @@
+[package]
+name = "firza/aethera"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+Knit = "sleitnick/knit@^1.5"
+Signal = "sleitnick/signal@1.5.0"
+roact-spring = "chriscerie/roact-spring@1.1.5"
+roact-hooks = "kampfkarren/roact-hooks@0.5.1"
+TableUtil = "sleitnick/table-util@1.2.0"
+Trove = "sleitnick/trove@0.5.0"
+Symbol = "sleitnick/symbol@2.0.1"
+bridgenet2 = "ffrostflame/bridgenet2@1.0.0"
