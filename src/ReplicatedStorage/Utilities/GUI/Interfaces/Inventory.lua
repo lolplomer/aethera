@@ -101,6 +101,9 @@ function EquipButtonComponent:render()
                 if not Equipped then
                     if TypeInfo.Method == 'Single' then
                         GUI:CreatePopup(EquipPopup:render(1, {ItemData = itemData, Id = id}), 'EquipPopup')
+                    elseif TypeInfo.Method == 'Multiple' then
+                        local InventoryService = knit.GetService("InventoryService")
+                        InventoryService.Equip:Fire(id)
                     end
                 else
                     local InventoryService = knit.GetService("InventoryService")

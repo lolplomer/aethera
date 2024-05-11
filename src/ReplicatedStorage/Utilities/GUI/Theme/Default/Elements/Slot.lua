@@ -26,6 +26,10 @@ local zeroCF = CFrame.new()
 local Knit = require(ReplicatedStorage:WaitForChild('Packages'):WaitForChild('Knit'))
 local GUI = Knit.GetController("GUI")
 
+local BodyShotConfig = {
+    Torso = CFrame.new(0,0.7,-5)
+}
+
 function Slot:init()
    -- print("Initializing",self.props.itemName)
     self.viewportRef = roact.createRef()
@@ -52,7 +56,8 @@ function Slot:render()
         
         AnchorPoint = Vector2.new(0.5,0.5),
         Position = UDim2.fromScale(0.5,0.5),
-        Size = UDim2.fromScale(0.85,0.85)
+        Size = UDim2.fromScale(0.85,0.85),
+        
     }
 
     local Model: Model, UseImageLabel: boolean, cameraCF: CFrame = nil, true, nil
@@ -83,19 +88,31 @@ function Slot:render()
             iconProperty.Size = UDim2.fromScale(0.9,0.9)
             iconProperty.LightColor = Color3.new(1, 1, 1)
             iconProperty.Ambient = Color3.new(1, 1, 1)
-
-            local modelCF, modelSize = Model:GetBoundingBox()
-            local orientation = modelCF - modelCF.Position
-            if Model.PrimaryPart then
-                orientation = Model.PrimaryPart.CFrame - Model.PrimaryPart.CFrame.Position
-            end
             
-            local baseCF = CFrame.new(modelCF.Position)
-            local baseOffset = CFrame.new(0, 0.25, modelSize.Y * 4)
-            local categoryOffset = itemCategoryOffsets[item.Category] or zeroCF
-            local customOffset = item.Icon.ViewportOffset or zeroCF
+            
+            if item.Equipment.Type == 'Body' then
 
-            cameraCF = baseCF * orientation * baseOffset * categoryOffset * customOffset
+                iconProperty.LightDirection = Vector3.new(0,-1,0.2)
+                local modelCF, _ = Models.Rig:GetBoundingBox()
+                local offset = BodyShotConfig[item.Equipment.Subtype] or CFrame.new()
+
+                cameraCF = CFrame.lookAt((modelCF * CFrame.new(-20,0,-20).Position),modelCF.Position) * offset
+            else
+                local modelCF, modelSize = Model:GetBoundingBox()
+
+                local orientation = modelCF - modelCF.Position
+                if Model.PrimaryPart then
+                    orientation = Model.PrimaryPart.CFrame - Model.PrimaryPart.CFrame.Position
+                end
+                
+                local baseCF = CFrame.new(modelCF.Position)
+                local baseOffset = CFrame.new(0, 0.25, modelSize.Y * 4)
+                local categoryOffset = itemCategoryOffsets[item.Category] or zeroCF
+                local customOffset = item.Icon.ViewportOffset or zeroCF
+    
+                cameraCF = baseCF * orientation * baseOffset * categoryOffset * customOffset
+            end
+          
         else
            useImage()
         end
@@ -178,9 +195,11 @@ function Slot:render()
            Icon = UseImageLabel and roact.createElement("ImageLabel", iconProperty) 
             or roact.createElement("ViewportFrame", iconProperty, {
                 Camera = roact.createElement("Camera", {
+                    
                     FieldOfView = 9,
                     CFrame = cameraCF,
                     [roact.Ref] = self.cameraRef,
+
                 })
             }),
        }),
@@ -197,8 +216,19 @@ function Slot:updateViewportModel()
     if self.UsingViewport then
         local item = ItemsModule[self.props.ItemData[1]]
         local previewModel = Models[item.Model]:Clone()
-        previewModel.Parent = self.viewportRef:getValue()
-        self.PreviewModel = previewModel
+
+        if item.Equipment.Type == 'Body' then
+            local rig = Models.Rig:Clone()
+            local typeInfo = item:GetTypeInfo()
+            typeInfo.ApplyInstanceViewport(previewModel, rig)
+
+            rig.Parent = self.viewportRef:getValue()
+            self.PreviewModel = rig
+        else
+            previewModel.Parent = self.viewportRef:getValue()
+            self.PreviewModel = previewModel
+        end
+        
     end
 end
 

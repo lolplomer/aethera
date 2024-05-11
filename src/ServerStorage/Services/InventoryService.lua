@@ -515,6 +515,7 @@ local function OnPlayerAdded(player:Player, data)
     PlayerInv:AddItem("CycloneSword")
     PlayerInv:AddItem("BasicSword")
     PlayerInv:AddItem('Auri')
+    PlayerInv:AddItem('BasicArmor')
 end
 
 -- Builds an Empty Equipment Data

@@ -218,6 +218,8 @@ end
 function Module:Initialize(CharModel: Model)
     local Cleaner = Trove.new()
 
+    CombatService = Knit.GetService"CombatService"
+
     local InvController = Knit.GetController("InventoryController")
 
     local WeaponData = InvController:GetEquippedItem('Weapon')
