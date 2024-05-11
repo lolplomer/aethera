@@ -21,11 +21,15 @@ CharacterClass.__index = CharacterClass
 
 local StateChanged = BridgeNet2.ReferenceBridge("StateChanged")
 
+local CombatService
+
 function CharacterClass:SetState(State, index)
     self.State = State
     self.StateIndex = index
 
-    StateChanged:Fire {State, index}
+
+    CombatService:SetState(State, index)
+    --StateChanged:Fire {State, index}
 end
 
 function CharacterClass:SetAwaitingState(State, Index)

@@ -37,7 +37,7 @@ function CombatService:KnitInit()
             KeybindService:SetDefaultKeybind(Name, key, index)
         end
     end
-
+ 
     PlayerDataService.PlayerAdded:Connect(function(player: Player)
         CombatData[player] = {
             State = nil,
@@ -47,7 +47,7 @@ function CombatService:KnitInit()
 
     game.Players.PlayerRemoving:Connect(function(player)
         CombatData[player] = nil
-    end)
+    end) 
 
     StateChanged:Connect(function(player, content)
         local State, index = table.unpack(content)
@@ -68,6 +68,16 @@ function CombatService:KnitInit()
         Inventory:NextEquipment('Weapon')
         print('next')
     end)
+end
+
+function CombatService.Client:SetState(Player, State, StateIndex)
+    local PlayerStateService = Knit.GetService("PlayerStateService")
+    local PlayerState = PlayerStateService:GetPlayerState(Player)
+
+    PlayerState:SetMultiple ({
+        CombatState = State,
+        CombatStateIndex = StateIndex
+    })
 end
 
 

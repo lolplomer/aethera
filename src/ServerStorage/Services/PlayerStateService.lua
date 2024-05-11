@@ -34,6 +34,16 @@ function StateClass:Set(index, value)
     self.Replica:SetValue({index}, value)
 end
 
+function StateClass:SetMultiple(values)
+    for index, value in values do
+        if StateModule.__set[index] then
+            local Stats = StatService:GetStats(self.Player)
+            values[index] = StateModule.__set[index](value, self.Player, Stats, self)
+        end
+    end
+    self.Replica:SetValues({}, values)
+end
+
 local function OnPlayerAdded(player: Player, data)
     local StateReplica = ReplicaService.NewReplica{
         ClassToken = StateClassToken,
@@ -88,6 +98,7 @@ function PlayerStateService:KnitInit()
     game.Players.PlayerRemoving:Connect(OnPlayerRemoving)
     PlayerDataService.PlayerAdded:Connect(OnPlayerAdded)
 end
+
 
 
 return PlayerStateService

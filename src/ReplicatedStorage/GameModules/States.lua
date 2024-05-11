@@ -1,6 +1,7 @@
 local States = {
 
-    MP = 0
+    MP = 0,
+    Action = nil,
 
 }
 

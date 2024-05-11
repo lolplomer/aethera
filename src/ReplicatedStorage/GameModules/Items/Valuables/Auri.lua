@@ -1,5 +1,5 @@
 local item = {
-    Rating = "F",
+    Rating = "S",
     DisplayName = "Auri",
     Description = 
     [[The main currency of this world]],

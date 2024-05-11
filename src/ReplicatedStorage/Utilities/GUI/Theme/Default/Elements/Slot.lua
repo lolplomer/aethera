@@ -158,6 +158,8 @@ function Slot:render()
             Position = UDim2.fromScale(0,0.95),
             Text = props.EquipPosition,
             TextScaled = true,
+            Font = Enum.Font.SourceSansBold,
+            TextColor3 = Color3.new(0.3, 0.3, 0.3)
        }, {
             Corner = roact.createElement("UICorner", {CornerRadius = UDim.new(0.4,0)})
        }),

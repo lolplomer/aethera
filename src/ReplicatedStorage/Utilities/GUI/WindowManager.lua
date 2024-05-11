@@ -152,7 +152,8 @@ function windowManager.new(WindowName, props)
     function component:render()
 
         return roact.createElement("ScreenGui", {
-            ZIndexBehavior = Enum.ZIndexBehavior.Sibling    
+            ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+            ResetOnSpawn = false
         }, {
             Frame = GUI.newElement("Frame", {
                 Visible = true,

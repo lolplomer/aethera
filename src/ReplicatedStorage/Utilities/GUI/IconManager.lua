@@ -1,10 +1,11 @@
 local iconManager = {}
 
 local iconModule = require(game.ReplicatedStorage:WaitForChild"Utilities":WaitForChild"Icon")
+---=local iconModule = require(game.ReplicatedStorage:WaitForChild('Packages'):WaitForChild('topbarplus'))
 
-local iconController = require(game.ReplicatedStorage.Utilities.Icon:WaitForChild"IconController")
-iconController.voiceChatEnabled = true
-iconController:setLeftOffset(10)
+-- local iconController = require(game.ReplicatedStorage.Utilities.Icon:WaitForChild"IconController")
+-- iconController.voiceChatEnabled = true
+-- iconController:setLeftOffset(10)
 
 local icons = {}
 
@@ -18,7 +19,7 @@ function  newIcon(iconName)
     return icons[iconName]
 end
 
-iconManager.Controller = iconController
+iconManager.Controller = iconModule
 
 setmetatable(iconManager, {
     __call = function(_, iconName)
