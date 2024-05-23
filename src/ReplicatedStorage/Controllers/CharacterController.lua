@@ -8,15 +8,42 @@ local CharacterModule = require(CombatFolder:WaitForChild"Character")
 local Util = require(ReplicatedStorage.Utilities.Util)
 local Player = game.Players.LocalPlayer
 
-local CharacterController = Knit.CreateController { Name = "CharacterController" }
 
+local Signal = require(ReplicatedStorage.Packages.Signal)
+local CharacterController = Knit.CreateController { Name = "CharacterController" }
+CharacterController.StateChanged = Signal.new()
+
+local Char
+
+local State = {
+    State = nil,
+    Index = nil
+}
 
 function CharacterController:KnitStart()
     Util.CharacterAdded(Player, function(Character: Model)
-        CharacterModule:Initialize(Character)
+        Char = CharacterModule:Initialize(Character)
+
+        Char.StateChanged:Connect(function(state, index)
+            State.State = state
+            State.Index = index
+            self.StateChanged:Fire(state, index)
+        end)
     end)
 end
 
+function CharacterController:ChangeState(state, index)
+    index = index or 1
+    Char:ChangeState(state, index)
+end
+
+function CharacterController:GetState()
+    return State.State, State.Index
+end
+
+function CharacterController:GetCharacter()
+    return Char
+end
 
 function CharacterController:KnitInit()
     

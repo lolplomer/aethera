@@ -75,6 +75,8 @@ local function OnPlayerAdded(player, data)
         elseif arg[1] == 'getstat' then
             local stat = arg[2]
             print(`{stat} value : {PlayerStatsModifier:Get(stat)}`)
+        elseif arg[1] == 'readstats' then
+            print(PlayerStatsModifier)
         end
     end)
 end
@@ -88,6 +90,18 @@ end
 function StatService:GetExpAndLevel(player)
     local StatsData = PlayerDataService:GetPlayerData(player).Stats
     return StatsData.Exp, StatsData.Level
+end
+
+function StatService:CreateMobStats(RawStats, Level)
+    for stat, metadata in Stats do
+        if not RawStats[stat] then
+            RawStats[stat] = metadata.DefaultValue
+        end
+    end
+    return StatsModifier.newForMob {
+        RawStats = RawStats,
+        Level = Level
+    }
 end
 
 function StatService:AddExp(player:Player, value)

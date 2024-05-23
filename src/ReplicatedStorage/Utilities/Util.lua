@@ -29,6 +29,24 @@ function Util.GetWeaponFolder(Subtype)
     return Assets:WaitForChild'Weapons'[Subtype]
 end
 
+function Util.ComparePath(path1, path2)
+    for i,v in path2 do
+        if path1[i]~=v then
+            return false
+        end
+    end
+    return true
+end
+
+local Debounces = {}
+function Util.Debounce(Name,t)
+    if os.clock()-(Debounces[Name] or 0)>t then
+        Debounces[Name] = os.clock()
+        return true
+    end
+    return false
+end
+
 function Util.GetAnimationFolder(WeaponFolder: Folder, Animation)
     return WeaponFolder.Animations:FindFirstChild(Animation)
 end

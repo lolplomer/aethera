@@ -9,7 +9,9 @@ local IconManager = require(GUIUtil:WaitForChild"IconManager")
 local items = require(game.ReplicatedStorage:WaitForChild"GameModules":WaitForChild"Items")
 local categorySettings = items.Settings
 
-local Window = WindowManager.new(script.Name)
+local Window = WindowManager.new(script.Name, {
+    Keybind = 'Inventory'
+})
 local MasterFrame = Window.Frame
 
 local InvUtil = require(game.ReplicatedStorage:WaitForChild"Utilities":WaitForChild"InventoryUtil")
@@ -49,10 +51,6 @@ EquipPopup
         return roact.createFragment(btns)
     end)
 end)
-
-
-
-print("INVENTORY INIT")
 
 function Window:didUpdate()
    -- print('Inventory updated')

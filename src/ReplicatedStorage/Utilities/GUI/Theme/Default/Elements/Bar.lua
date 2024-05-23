@@ -7,6 +7,20 @@ local function Corner(radius)
     return roact.createElement('UICorner', {CornerRadius = radius})
 end
 
+--[[
+    Size
+    Position
+    LayoutOrder
+    CornerRadius
+    StrokeSize
+    StrokeColor
+    BarColor
+    Progress
+    MaxProgress
+    InnerBarColor
+]]
+
+
 return function (props)
     return roact.createElement("Frame", {
         LayoutOrder = props.LayoutOrder,
@@ -21,13 +35,13 @@ return function (props)
             BorderSizePixel = 0,
             Position = UDim2.fromScale(0.5,0.5),
             AnchorPoint = Vector2.new(0.5,0.5),
-            Size = UDim2.new(1,-(props.StrokeSizeX or props.StrokeSize),1,-(props.StrokeSizeY or props.StrokeSize)),
+            Size = UDim2.new(1,-(props.StrokeSizeX or props.StrokeSize or 0),1,-(props.StrokeSizeY or props.StrokeSize or 0)),
             BackgroundColor3 = props.InnerBarColor or ColorUtil.MultiplyValue(props.BarColor, 0.5),
             [roact.Ref] = props.Ref
         }, {
             Bar = roact.createElement("Frame", {
                 BorderSizePixel = 0,
-                Size = UDim2.fromScale(props.Progress/props.MaxProgress,1),
+                Size = UDim2.fromScale((props.Progress or 0)/(props.MaxProgress or 1),1),
                 BackgroundColor3 = props.BarColor,
                 [roact.Ref] = props.BarRef
             }, {

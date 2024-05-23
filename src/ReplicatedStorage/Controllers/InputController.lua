@@ -37,6 +37,26 @@ local function BeginCapturingKeybindInputs()
     end)
 end
 
+local function RemapShiftLockKeys(KEYS: string)
+    local Players = game:GetService("Players")
+
+    local mouseLockController = Players.LocalPlayer
+        .PlayerScripts
+        :WaitForChild("PlayerModule")
+        :WaitForChild("CameraModule")
+        :WaitForChild("MouseLockController")
+
+    local obj = mouseLockController:FindFirstChild("BoundKeys")
+    if obj then
+        obj.Value = KEYS
+    else
+        obj = Instance.new("StringValue")
+        obj.Name = "BoundKeys"
+        obj.Value = KEYS
+        obj.Parent = mouseLockController
+    end
+end
+
 function InputController:OnKeybindTrigger(KeybindName, Fn)
     return self.KeybindTriggered:Connect(function(Keybind, index)
         if Keybind == KeybindName then
@@ -45,6 +65,14 @@ function InputController:OnKeybindTrigger(KeybindName, Fn)
     end)
 end
 
+function InputController:GetInputOfKeybind(keybind, index)
+    local PlayerData = PlayerDataController:GetPlayerData()
+    local inputs = PlayerData.Keybinds[keybind]
+    index = index or 1
+    if inputs then
+        return InputConverter:ReadInputData(inputs[index])
+    end
+end
 
 function InputController:FindKeybindFromInput(input)
     local PlayerData = PlayerDataController:GetPlayerData()
@@ -63,6 +91,7 @@ end
 
 function InputController:KnitStart()
    BeginCapturingKeybindInputs()
+   RemapShiftLockKeys('LeftControl,RightControl')
 end
 
 

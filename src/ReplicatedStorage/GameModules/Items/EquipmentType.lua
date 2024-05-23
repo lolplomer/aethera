@@ -85,7 +85,7 @@ local function addAccoutrement(character, accoutrement)
         if accoutrementAttachment then
             local characterAttachment = findFirstMatchingAttachment(character, accoutrementAttachment.Name)
             if characterAttachment then
-                print('Attachment',accoutrement,character,characterAttachment)
+               -- print('Attachment',accoutrement,character,characterAttachment)
                 handle.CFrame = characterAttachment.WorldCFrame * accoutrementAttachment.CFrame:inverse()
                 --weldAttachments(characterAttachment, accoutrementAttachment)
             end
@@ -113,6 +113,7 @@ local Type = {
         ApplyInstance = function(Metadata, Model, Character, Player)
             AttachWeaponModel(Model, Character)
         end,
+        LayoutOrder = 1,
     },
     Body = {
         Subtype = {
@@ -130,8 +131,29 @@ local Type = {
                     addAccoutrement(Character, v)
                 end
             end
-        end
-
+        end,
+        LayoutOrder = 2,
+    },
+    Arcanites = {
+        Subtype = {
+            Necklace = {},
+            Ring = {},
+            Bracelet = {},
+            Glove = {},
+        },
+        Method = "Multiple",
+        ApplyInstance = function(Metadata, Model, Character, Player)
+            AttachModel(Model, Character)
+        end,
+        ApplyInstanceViewport = function(Model, Character)
+            for _,v in Model:GetChildren() do
+                if v:IsA"Accessory" then
+                    print('applying',v)
+                    addAccoutrement(Character, v)
+                end
+            end
+        end,
+        LayoutOrder = 3,
     },
 }
 

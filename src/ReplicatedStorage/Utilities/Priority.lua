@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Models = {}
 
@@ -20,20 +21,28 @@ function HandlerClass:Destroy()
     self.Trove:Destroy()
 end
 
-function HandlerClass:Update(Property)
+function HandlerClass:Update(Property, TWINFO)
     local property = self.Values[Property]
     if property then
+        local v = self.DefaultValues[Property]
         for _, Value in property do
-            self.Instance[Property] = Value:GetValue()
+            v = Value:GetValue()
+            break
+            
     --        print('New value of',Property,':',Value:GetValue(),'\nAll other values:',property)
-            return
+            --return
+        end
+
+
+        if v then
+            if self.TWINFO then
+                TweenService:Create(self.Instance, self.TWINFO, {[Property] = v}):Play()
+            else
+                self.Instance[Property] = v
+            end
         end
         
-        local DefaultValue = self.DefaultValues[Property]
-    --    print("Default value",Property,DefaultValue,self.DefaultValues)
-        if DefaultValue then
-            self.Instance[Property] = DefaultValue
-        end
+        
     end
 end
 
@@ -64,6 +73,10 @@ end
 
 function HandlerClass:SetDefaultValue(property, value)
     self.DefaultValues[property] = value
+end
+
+function HandlerClass:SetTweenInfo(TwInfo)
+    self.TWINFO = TwInfo
 end
 
 function ValueClass.new(Handler, Property, Value, Priority, Time)
@@ -116,6 +129,7 @@ function PriorityModule:GetHandler(Instance: Instance)
             DefaultValues = {},
             Trove = Trove.new(),
             Instance = Instance,
+            TWINFO = nil
         }, HandlerClass)
 
         Handler.Trove:Add(function()

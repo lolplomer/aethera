@@ -159,7 +159,7 @@ function Slot:render()
                 GUI.Tween(self.innerFrameRef:getValue(), {BackgroundColor3 = rating.Color})
            end
        }),
-       Equipped = props.Equipped and roact.createElement("ImageLabel", {
+       Equipped = (props.Equipped or props.PositionEquipped) and roact.createElement("ImageLabel", {
             AnchorPoint = Vector2.new(1,1),
             Size = UDim2.fromScale(0.3,0.3),
             SizeConstraint = Enum.SizeConstraint.RelativeXX,

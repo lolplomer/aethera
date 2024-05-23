@@ -99,8 +99,14 @@ function Frame:render(LayoutOrder, props)
     end
 
     return roact.createElement(classFrame, frameProps, {
-        UIListLayout = roact.createElement("UIListLayout", LayoutProperties),
+        UIListLayout = not self.ListLayoutDisabled and roact.createElement("UIListLayout", LayoutProperties),
         UICorner = self.Background and roact.createElement("UICorner", {CornerRadius = self.Background.CornerRadius or UDim.new(0.09,0)}),
+        Padding = self.Padding and roact.createElement('UIPadding', {
+            PaddingBottom = UDim.new(0,self.Padding.Bottom or 0),
+            PaddingLeft = UDim.new(0,self.Padding.Left or 0),
+            PaddingRight = UDim.new(0,self.Padding.Right or 0),
+            PaddingTop = UDim.new(0,self.Padding.Top or 0)
+        }),
         Children = roact.createFragment(children)
     })
 end
@@ -122,6 +128,11 @@ function Frame:addElementIf(conditionFn, children)
         children = children
     }
     table.insert(self.Children, object)
+    return self
+end
+
+function Frame:disableListLayout()
+    self.ListLayoutDisabled = true
     return self
 end
 
@@ -147,6 +158,7 @@ end
 
 function Frame:enableScrolling(automaticSize)
     self.ScrollingAutomaticSize = automaticSize or "XY"
+    self:padding {Right = 10}
     return self
 end
 
@@ -216,6 +228,11 @@ end
 
 function Frame:setSize(size)
     self._sizeModifier = size
+    return self
+end
+
+function Frame:padding(size)
+    self.Padding = size
     return self
 end
 

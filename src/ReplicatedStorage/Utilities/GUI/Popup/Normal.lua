@@ -1,10 +1,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local roact = require(ReplicatedStorage:WaitForChild('Utilities'):WaitForChild('Roact'))
-local GUIUtil = require(script.Parent:WaitForChild"GUIUtil")
+local GUIUtil = require(script.Parent.Parent:WaitForChild"GUIUtil")
 
 --local GUI = Knit.GetController("GUI")
-
-local Popup = {}
 
 local PopupComponent = roact.PureComponent:extend('Popup')
 
@@ -12,7 +10,7 @@ function PopupComponent:didMount()
     local UIS = game:GetService("UserInputService")
     self.InputDetect = UIS.InputEnded:Connect(function(input, gameProcessedEvent)
         if gameProcessedEvent then return end
-        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and not self.hovered then
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseWheel) and not self.hovered then
             if self.props.DeselectedCallback then
                 self.props.DeselectedCallback()
             end
@@ -38,7 +36,7 @@ function PopupComponent:render()
     local props = self.props
     return roact.createElement("CanvasGroup", {
         BackgroundColor3 = Color3.fromRGB(102, 133, 168),
-
+        
         Position = props.Position or UDim2.fromScale(0.5,0.5),
         AnchorPoint = props.AnchorPoint or Vector2.new(0.5,0.5),
         Size = self.Size,
@@ -61,24 +59,4 @@ function PopupComponent:render()
     })
 end
 
-Popup.Layouts = {
-    ['Center'] = function(props)
-        print('props', props)
-       -- local hovered = false
-        return roact.createElement(PopupComponent, props)
-    end
-}
-
-function Popup.CreateLayout(element, props)
-    local Layout = Popup.Layouts.Center
-    return roact.createElement('ScreenGui', {
-        DisplayOrder = 100,
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    }, {
-        Frame = roact.createElement(Layout, props, {
-            Content = element
-        })
-    })
-end
-
-return Popup
+return PopupComponent

@@ -11,12 +11,15 @@ function StatClass:LevelMult(value)
     return self
 end
 
+local layoutOrder = 0
 local function New(IsPercentage: boolean, Label: string, Visible: boolean)
     if Visible == nil then
         Visible = true
     end
+    layoutOrder += 1
     return setmetatable({
         IsPercentage = IsPercentage,
+        LayoutOrder = layoutOrder,
         Label = Label,
         Visible = Visible,
         DefaultValue = 1,
@@ -29,11 +32,11 @@ local Stats = {
     DEF = New(false):Default(10):LevelMult(0.5),
     HP = New(false):Default(100):LevelMult(2),
     MP = New(false):Default(100):LevelMult(2),
-    TIMESPD = New(true, "Time SPD", false),
+    CRITDMG = New(true, "CRIT DMG"),
+    CRITRATE = New(true, "CRIT RATE"):Default(.05),
     ATKSPD = New(true, "ATK SPD"),
     MOVSPD = New(true, "Movement SPD"),
-    CRITDMG = New(true, "CRIT DMG"),
-    CRITRATE = New(true, "CRIT RATE"),
+    TIMESPD = New(true, "Time SPD", false),
 }
 
 local function Init()

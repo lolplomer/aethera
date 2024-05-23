@@ -26,6 +26,8 @@ local TweenConfig = TweenInfo.new(0.25)
 controller.Popup = require(GUIUtilities:WaitForChild"Popup")
 controller.Color = require(misc:WaitForChild"ColorUtil")
 controller.UIPropertyChanged = signal.new()
+controller.DisableScroll = false
+
 
 function controller.Tween(object, goal, customTweenConfig)
     TWS:Create(object, customTweenConfig or TweenConfig, goal):Play()
@@ -34,6 +36,10 @@ end
 function controller.newElement(Element, props, children)
     local element = roact.createElement(Elements[Element], props or {}, children)
     return element
+end
+
+function controller.GetComponent(Element)
+    return Elements[Element]
 end
 
 function controller:UpdateUI(name, props)
@@ -91,11 +97,11 @@ function controller:DisableAllExcept(ExceptionInterfaceNames: {string}, DoNothin
     end
 end
 
-function controller:CreatePopup(element, id, props)
+function controller:CreatePopup(element, id, props, DeselectedCallback)
     --self:ClosePopup(id)
     props = props or {}
 
-    props.DeselectedCallback = function()
+    props.DeselectedCallback = DeselectedCallback or function()
         self:ClosePopup(id)
     end
     local layout = self.Popup.CreateLayout(element, props)
@@ -128,6 +134,16 @@ function controller:EnableAll()
       --  print("(ALL) --- --- Enabling", name)
         self:EnableUI(name)
     end
+end
+
+function controller:KnitInit()
+    local ContextActionService = game:GetService("ContextActionService")
+
+
+    ContextActionService:BindAction("DisableScroll",
+        function ()
+            return self.DisableScroll and Enum.ContextActionResult.Sink or Enum.ContextActionResult.Pass
+        end, false, Enum.UserInputType.MouseWheel)
 end
 
 function controller:KnitStart()

@@ -3,6 +3,7 @@
 local ReplicatedStorage = game.ReplicatedStorage
 local knit = require(ReplicatedStorage:WaitForChild"Packages":WaitForChild"Knit")
 local GUI = knit.GetController"GUI"
+local CharacterController = knit.GetController"CharacterController"
 
 local roact = require(ReplicatedStorage:WaitForChild"Utilities":WaitForChild"Roact")
 
@@ -16,6 +17,7 @@ local IconManager = require(script.Parent:WaitForChild"IconManager")
 local Promise = require(ReplicatedStorage.Utilities:WaitForChild"Promise")
 
 local GuiUtil = require(script.Parent:WaitForChild"GUIUtil")
+local Util = require(ReplicatedStorage.Utilities:WaitForChild"Util")
 
 local coreGuis = {
     Backpack = true,
@@ -57,11 +59,18 @@ windowManager.__index = windowManager
 
 local selectedWindow, pendingWindow = nil, nil
 
-function windowManager:SwitchWindow(WindowName)
+function windowManager:SwitchWindow(WindowName, BypassDebounce)
     local window = windows[WindowName]
     local current = selectedWindow
 
-    if not window and current then
+    print('Switching window',WindowName)
+
+    if not Util.Debounce('WindowSwitch', 1) and not BypassDebounce then
+        return
+    end
+    print('Switching window 2')
+    if (not window) and current then
+        print('Disabling blur')
         current.DisableBlur:Play()
         current._component:close()
         current._component:setState {selected = false}
@@ -80,13 +89,15 @@ function windowManager:SwitchWindow(WindowName)
 
         pendingWindow = window
         if current then
+            print('Has currently open window, closing:')
             --print(current, current.Name)
             -- current.DisableBlur:Play()
             -- --GUI:DisableUI(current.Name)
             -- current._component:setState {selected = false}
-            IconManager(current.Name):deselect()
-            
+            --IconManager(current.Name):deselect()
+            windowManager:SwitchWindow(nil, true)
         end
+        print('Continuing enable new window')
         pendingWindow = nil
         
         GUI:DisableAllExcept ({WindowName})
@@ -100,6 +111,8 @@ function windowManager:SwitchWindow(WindowName)
     end
     
     selectedWindow = window
+    
+    CharacterController:ChangeState(selectedWindow and 'Busy')
 end
 
 function windowManager.new(WindowName, props)
@@ -127,9 +140,11 @@ function windowManager.new(WindowName, props)
     
     InitializeBlur()
 
+    local size = props.FullSize and UDim2.fromScale(1,1) or UDim2.fromScale(0.725,0.725)
+
     GuiUtil.ImplementAnimatedOpenClose(component, {
-        Size = UDim2.new(0.725, 0,0.725, 0),
-        CloseSizeScale = 1.1
+        Size = size,
+        CloseSizeScale = props.CloseSizeScale or 1.1
     })
 
     component.Name = WindowName
@@ -140,6 +155,7 @@ function windowManager.new(WindowName, props)
             FrameTransparency = 1,
         }
         window._component = self
+        window.props = self.props
 
         self.FrameRef = roact.createRef()
         self.TopbarOffset = UDim2.fromScale(-0.04,0.03)
@@ -148,60 +164,103 @@ function windowManager.new(WindowName, props)
         end
     end 
 
-
     function component:render()
+        local Child
+        if not props.FullSize then
+            
+            Child = {
+                Frame = GUI.newElement("Frame", {
+                    Visible = true,
+                    [roact.Ref] = self.FrameRef,
+                    Size = self.Size,
+                    
+                }, {
+                    Topbar = GUI.newElement("FrameTopbar", {
+                        Title = WindowName,
+                        Position = self.TopbarOffset,
+                    }),
+                    CloseButton = GUI.newElement("CloseButton", {
+                        Size = UDim2.fromScale(0.13,0.13),
+                        AnchorPoint = Vector2.new(1,0),
+                        Position = UDim2.fromScale(.98, self.TopbarOffset.Y.Scale-0.015),
+                        Callback = function()
+                            windowManager:SwitchWindow(nil, true)
+                            --self.icon:deselect()
+                        end
+                    }),
+                    MainFrame = roact.createElement("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.fromScale(0.5,0.17),
+                        Size = UDim2.new(1,-10,0.82,0),
+                        AnchorPoint = Vector2.new(0.5,0),
+                        
+                    }, {
+                        Frame = window.Frame:render()
+                    })
+                }),
+            }
+
+        else
+            Child = {
+                Frame = roact.createElement('CanvasGroup', {
+                    [roact.Ref] = self.FrameRef,
+                    Size = UDim2.fromScale(1,1),
+                    BackgroundColor3 = Color3.fromRGB(0,0,0),
+                    BackgroundTransparency = 0.6,
+                    AnchorPoint = Vector2.new(0.5,0.5),
+                    Position = UDim2.fromScale(0.5,0.5)
+                }, {
+                    CloseButton = GUI.newElement("CloseButton", {
+                        Size = UDim2.fromScale(0.07,0.07),
+                        AnchorPoint = Vector2.new(1,0),
+                        Position = UDim2.fromScale(.98, self.TopbarOffset.Y.Scale-0.015),
+                        Callback = function()
+                            print('Callback')
+                            windowManager:SwitchWindow(nil)
+                            --self.icon:deselect()
+                        end
+                    }),
+                    MainFrame = roact.createElement("Frame", {
+                        BackgroundTransparency = 1,
+                        Position = UDim2.fromScale(0.5,0.11),
+                        Size = UDim2.new(0.95,0,0.82,0),
+                        AnchorPoint = Vector2.new(0.5,0),
+                        ClipsDescendants = true,
+                    }, {
+                        Frame = window.Frame:render()
+                    })
+                })
+            }
+        end
 
         return roact.createElement("ScreenGui", {
             ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-            ResetOnSpawn = false
-        }, {
-            Frame = GUI.newElement("Frame", {
-                Visible = true,
-                [roact.Ref] = self.FrameRef,
-                Size = self.Size
-            }, {
-                Topbar = GUI.newElement("FrameTopbar", {
-                    Title = WindowName,
-                    Position = self.TopbarOffset,
-                }),
-                CloseButton = GUI.newElement("CloseButton", {
-                    Size = UDim2.fromScale(0.13,0.13),
-                    AnchorPoint = Vector2.new(1,0),
-                    Position = UDim2.fromScale(.98, self.TopbarOffset.Y.Scale-0.015),
-                    Callback = function()
-                        self.icon:deselect()
-                    end
-                }),
-                MainFrame = roact.createElement("Frame", {
-                    BackgroundTransparency = 1,
-                    Position = UDim2.fromScale(0.5,0.17),
-                    Size = UDim2.new(1,-10,0.82,0),
-                    AnchorPoint = Vector2.new(0.5,0)
-                }, {
-                    Frame = window.Frame:render()
-                })
-            }),
-        })
+            ResetOnSpawn = false,
+            DisplayOrder = 99,
+            IgnoreGuiInset = true
+        }, Child)
     end
 
-    function component:didUpdate(prevProps)
+
+    function component:didUpdate(prevProps,prevState)
       --  print('didUpdated', WindowName, window.onUpdated, window)
         GuiUtil.CheckDisabledProperty(self, prevProps)
        -- print('Didupdated 2', WindowName, window.onUpdated, window)
         if window.didUpdate then
            -- print('Calling in window onUpdated', WindowName)
-            window:didUpdate(prevProps)
+            window:didUpdate(prevProps,prevState)
         end
     end
 
     function component:didMount(...)
-
-        self:close()
+        local InputController = knit.GetController("InputController")
+        self:close()    
 
         local icon = IconManager(WindowName)
         :setOrder(5)
-        :setLabel(WindowName)
+        :setLabel(WindowName .. (props.Keybind and (" - " ..InputController:GetInputOfKeybind(props.Keybind).Name) or ""))
         :disableStateOverlay(true)
+        :oneClick(true)
         :bindEvent("selected", function(_icon)
             -- EnableBlur:Play()
             -- GUI:DisableAllExcept {WindowName}
@@ -209,20 +268,31 @@ function windowManager.new(WindowName, props)
             -- SetCoreGuiEnabled(false)
             -- self:open()
             -- self:setState {selected = true}
-
-            windowManager:SwitchWindow(WindowName)
+            windowManager:SwitchWindow(WindowName)    
         end)
-        :bindEvent("deselected", function()
-            -- DisableBlur:Play()
-            -- self:close()
-            -- GUI:EnableAll()
-            -- SetCoreGuiEnabled(true)
-            -- IconManager.Controller.setTopbarEnabled(true)
-            -- self:setState {selected = false}
+        -- :bindEvent("deselected", function()
+        --     -- DisableBlur:Play()
+        --     -- self:close()
+        --     -- GUI:EnableAll()
+        --     -- SetCoreGuiEnabled(true)
+        --     -- IconManager.Controller.setTopbarEnabled(true)
+        --     -- self:setState {selected = false}
             
-            windowManager:SwitchWindow(nil, true)
-        end)
+        --     windowManager:SwitchWindow(nil, true)
+        -- end)
         :autoDeselect(false)
+
+        if props.Keybind then
+
+            InputController:OnKeybindTrigger(props.Keybind, function()
+                if self.state.selected then
+                    windowManager:SwitchWindow()
+                    --icon:deselect()
+                else
+                    windowManager:SwitchWindow(WindowName)
+                end
+            end)
+        end
 
         if props.DisableIcon then
             icon:setEnabled(false)
@@ -238,6 +308,12 @@ function windowManager.new(WindowName, props)
     function component:willUnmount(...)
         if window.willUnmount then
             window:willUnmount(...)
+        end
+    end
+
+    function component:willUpdate(...)
+        if window.willUpdate then
+            window:willUpdate(...)
         end
     end
 

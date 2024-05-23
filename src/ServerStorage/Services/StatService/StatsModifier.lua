@@ -8,7 +8,9 @@ local Formula = require(Misc.StatFormula)
 local StatModule = require(ReplicatedStorage.GameModules.Stats)
 
 local ReplicaService = require(game.ServerScriptService.ReplicaService)
+
 local ReplicaToken = ReplicaService.NewClassToken("PlayerStats")
+local MobReplicaToken = ReplicaService.NewClassToken("MobStats")
 
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
@@ -30,11 +32,59 @@ local function CreateSignalForEveryStat()
     return signals
 end
 
+
+
 local ReplicaClass = require(Misc.ReplicaClass)
 
 local StatsModifier = {}
 StatsModifier.__index = function(self, index)
     return StatsModifier[index] or ReplicaClass.__index(self, index)
+end
+
+function StatsModifier.newForMob(Data: {RawStats: {[string] : number},Level:number} )
+    local self = setmetatable({
+        Data = {
+            Modifiers = {},
+            BaseModifiers = {},
+            FullStats = {},
+            Level = Data.Level,
+            RawStats = Data.RawStats,
+            Exp = Formula.GetExp(Data.Level)
+        },
+        ExpChanged = Signal.new(),
+        Changed = CreateSignalForEveryStat()
+        
+    }, StatsModifier)
+
+    local FullStats, BaseStats, Level = self:CalculateFullStats()
+    self.Data.FullStats = FullStats
+    self.Data.BaseStats = BaseStats
+    self.Data.Level = Level
+
+    
+    self.Replica = ReplicaService.NewReplica({
+        ClassToken = MobReplicaToken,
+        Data = self.Data,
+        WriteLib = WriteLib,
+    })
+
+    
+    self.Replica:AddCleanupTask(function()
+        self.ExpChanged:Destroy()
+        for _, signal in self.Changed do
+            signal:Destroy()
+        end
+    end)
+
+    self.ExpChanged:Connect(function(_, NewLevel)
+        print(NewLevel, math.floor(NewLevel), self.Data.Level)
+        if math.floor(NewLevel) ~= self.Data.Level then
+            self:CalculateFullStats()
+        end
+    end)
+
+    return self
+
 end
 
 function StatsModifier.new(player)
@@ -138,15 +188,26 @@ function StatsModifier:RemoveModifier(id)
     end
 end 
 
+function StatsModifier:IsPlayer()
+    return self.Player ~= nil
+end
+
 function StatsModifier:CalculateBaseStats()
 
-    local PlayerStats = self.PlayerData.Stats
-    local Level = math.floor(PlayerStats.Level)
+    local Level, RawStats
+    if self:IsPlayer() then
+        local PlayerStats = self.PlayerData.Stats
+        RawStats = PlayerStats.RawStats
+        Level = math.floor(PlayerStats.Level)    
+    else
+        Level, RawStats = self.Data.Level, self.Data.RawStats
+    end
+    
 
     self.Level = Level
 
     local BaseStats = {}
-    for stat, value in PlayerStats.RawStats do
+    for stat, value in RawStats do
         local metadata = StatModule[stat]
         local BaseStat = Formula.GetBaseStat(Level, value, metadata.LevelMultiplier)
         BaseStats[stat] = BaseStat
@@ -156,7 +217,7 @@ function StatsModifier:CalculateBaseStats()
 end
 
 function StatsModifier:Get(stat)
-    if self.Level ~= self.PlayerData.Stats.Level then
+    if self.Level ~= (self:IsPlayer() and self.PlayerData.Stats.Level or self.Data.Level) then
         self:CalculateFullStats()
     end
     return self.Data.FullStats[stat]

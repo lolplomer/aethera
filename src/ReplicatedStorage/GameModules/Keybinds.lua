@@ -1,0 +1,3 @@
+local keybinds = {}
+
+return keybinds

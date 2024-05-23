@@ -163,7 +163,7 @@ local Equipment = {} do
         local StatService = knit.GetService("StatService")
         local PlayerStats = StatService:GetStats(self.Player) 
 
-        local ModifierName = `Equipment.{Type}({Subtype})`
+        local ModifierName = `{Type}{Subtype and ' '..Subtype or ''}`
 
         if ItemId then
             local Item = inventory:GetItem(ItemId)
@@ -174,12 +174,12 @@ local Equipment = {} do
             local Substats = util.ReadItemStats(_Data.Substats)
 
             PlayerStats:SetModifiers {
-                [`{ModifierName}.Stats`] = Mainstats,
-                [`{ModifierName}.Substats`] = Substats
+                [`{ModifierName} Stats`] = Mainstats,
+                [`{ModifierName} Substats`] = Substats
             }
         else
-            PlayerStats:RemoveModifier(`{ModifierName}.Stats`)
-            PlayerStats:RemoveModifier(`{ModifierName}.Substats`)
+            PlayerStats:RemoveModifier(`{ModifierName} Stats`)
+            PlayerStats:RemoveModifier(`{ModifierName} Substats`)
         end
     end
 
@@ -538,11 +538,14 @@ end
 -- Initiates the Service
 function service:KnitInit()
     PlayerDataService = knit.GetService("PlayerDataService")
+    local KeybindService = knit.GetService('KeybindService')
 
     PlayerDataService:RegisterDataIndex("Inventory", {
         Content = {}, 
         Equipment = BuildEmptyEquipment()
     })
+
+    KeybindService:SetDefaultKeybind('Inventory', Enum.KeyCode.B)
 
     self.Client.Equip:Connect(function(player, id, position)
         local PlayerInv = self:GetInventory(player)

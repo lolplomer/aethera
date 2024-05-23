@@ -1,3 +1,4 @@
+
 local Formula = {}
 
 local EXP_CONSTANT = 0.5
@@ -22,11 +23,33 @@ function Formula.GetBaseStat(Level, BaseValue, Multiplier)
 end
 
 function Formula.ApplyModifier(Stat, Multiplier, Flat)
-    return (Stat + Stat * Multiplier) + Flat
+    return math.max(Stat + Formula.GetModifierValue(Stat, Multiplier, Flat),0)
+end
+
+function Formula.GetModifierValue(Stat, Multiplier, Flat)
+    return Stat * Multiplier + Flat
 end
 
 function Formula.Percentage(value)
-    return (value * 100) .. "%"
+    return math.floor((value * 100) * 100)/100 .. "%"
+end
+
+function Formula.GetLabel(value, IsPercentage)
+    if IsPercentage then
+        return Formula.Percentage(value)
+    else
+        return math.floor(value)
+    end
+end
+
+function Formula.GetExpMinMax(Exp, Level)
+    Level = math.floor(Level)
+
+    local Now = Formula.GetExp(Level)
+    local Current = Exp - Now
+    local Next = Formula.GetExp(Level + 1) - Now
+    
+    return math.round(Current), math.round(Next)
 end
 
 return Formula

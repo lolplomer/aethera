@@ -18,18 +18,18 @@ return function (props)
         -- })
         local element = roact.createElement('TextButton', {
             Text = btn.Text,
-            Size = UDim2.fromScale(1,1/#props.Buttons-0.02),
-            BackgroundColor3 = Color3.new(1,1,1),
-            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1,1/#props.Buttons-0.04),
+            BackgroundColor3 = Color3.new(0.325490, 0.325490, 0.325490),
+            BackgroundTransparency = 0.7,
             LayoutOrder = i,
             [roact.Event.Activated] = btn.Callback,
             [roact.Event.MouseEnter] = function(rbx)
-                GUI.Tween(rbx, {BackgroundTransparency = 0.8})
+                GUI.Tween(rbx, {BackgroundColor3 = Color3.new(1,1,1)})
                 --rbx.BackgroundTransparency = 0.6
             end,
             [roact.Event.MouseLeave] = function(rbx)
                 task.wait()
-                GUI.Tween(rbx, {BackgroundTransparency = 1})
+                GUI.Tween(rbx, {BackgroundColor3 = Color3.new(0.325490, 0.325490, 0.325490)})
             end,
             Font = Enum.Font.Fondamento,
             TextColor3 = Color3.new(1,1,1),
@@ -51,7 +51,7 @@ return function (props)
         ListLayout = roact.createElement("UIListLayout", {
             HorizontalAlignment = Enum.HorizontalAlignment.Center,
             VerticalAlignment = Enum.VerticalAlignment.Center,
-            Padding = UDim.new(0.02,0)
+            Padding = UDim.new(0.04,0)
         }),
         Buttons = roact.createFragment(buttons)
     })
