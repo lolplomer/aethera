@@ -157,7 +157,7 @@ States._character = {
         
         local targetMoveVelocity = Vector3.new()
         local moveVelocity = Vector3.new()
-        local moveAcceleration = 8
+        local moveAcceleration = 14
 
         
         local function lerp(a,b,t)
@@ -165,7 +165,9 @@ States._character = {
         end
         local humanoid = self.Humanoid
         local function updateMovement( dt )
-            
+            if UserInputService:GetFocusedTextBox() then
+                return
+            end
             if humanoid then
                 local moveDir = getWalkDirectionWorldSpace()
                 targetMoveVelocity = moveDir

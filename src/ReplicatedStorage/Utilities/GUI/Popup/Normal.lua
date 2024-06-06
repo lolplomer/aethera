@@ -20,7 +20,7 @@ function PopupComponent:didMount()
 end
 
 function PopupComponent:init()
-    self.FrameRef = roact.createRef()
+    self.MainFrame = roact.createRef()
     self.Size = self.props.Size or UDim2.fromScale(0.2,0.15)
     GUIUtil.ImplementAnimatedOpenClose(self, {
         Size = self.Size,
@@ -50,9 +50,9 @@ function PopupComponent:render()
             self.hovered = false
            -- print(self.hovered)
         end,
-        [roact.Ref] = self.FrameRef
+        ["ref"] = self.MainFrame
     }, {
-        Children = roact.createFragment(self.props[roact.Children]),
+        Children =  roact.createElement(roact.Fragment, nil, self.props['children']),
         Ratio = props.UseRatio ~= false and roact.createElement("UIAspectRatioConstraint", {AspectRatio = 2.63}),
         Corner = roact.createElement("UICorner"),
         Stroke = roact.createElement("UIStroke", {Thickness = 3.5, Color = Color3.fromRGB(233, 235, 248)})

@@ -62,7 +62,7 @@ function Level:render()
             Text = 'Level',
             Size = UDim2.fromScale(1,ratio[1]),
             TextXAlignment = 'Left',
-            [roact.Ref] = self.Label,
+            ["ref"] = self.Label,
             RichText = true,
         }),
         Bar = GUI.newElement('Bar', {

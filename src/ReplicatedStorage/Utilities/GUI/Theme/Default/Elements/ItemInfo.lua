@@ -150,15 +150,15 @@ end)
         if equipment.Subtype then
             Type ..= ` <font size="6" color="#c9c9c9">[{equipment.Subtype}]</font>`
         end
-
-        return roact.createFragment{
+ 
+        return roact.createElement(roact.Fragment, nil , {
             Level = Text("Level:",data.Lvl,i),
             Type = Text('Type:',Type,i+1),
             BaseStatsTitle = Title("Base Stats:", i+2),
-            BaseStats = roact.createFragment(BaseStats),
+            BaseStats = roact.createElement(roact.Fragment, nil, BaseStats),
             SubstatsTitle = SubstatsAmount > 0 and Title("Sub stats:", i+4),
-            Substats = roact.createFragment(Substats)
-        }, i+5
+            Substats = roact.createElement(roact.Fragment, nil, Substats)
+        }), i+5
     end
 end)
 :div(0.02)

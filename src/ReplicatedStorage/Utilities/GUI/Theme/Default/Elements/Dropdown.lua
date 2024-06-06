@@ -85,7 +85,8 @@ function Dropdown:render()
                 VerticalAlignment = Enum.VerticalAlignment.Center,
                 HorizontalAlignment = Enum.HorizontalAlignment.Center
             }),
-            Choices = roact.createFragment(choices)
+            --Choices = roact.createElement(roact.Fragment, nil, choices)
+            Choices = roact.createElement(roact.Fragment, nil, choices)
         }),
         Arrow = roact.createElement("ImageLabel", {
             AnchorPoint = Vector2.new(1,0.5),

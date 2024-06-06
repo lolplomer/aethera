@@ -73,8 +73,8 @@ local function makeAnimatedComponent(toWrap)
 	end
 
 	function wrappedComponent:render()
-		-- Intercept Roact.Ref; we need access to the reference as well
-		local ref = self.props[Roact.Ref]
+		-- Intercept "ref"; we need access to the reference as well
+		local ref = self.props["ref"]
 
 		-- Create the properties table from scratch
 		local props = {}
@@ -89,7 +89,7 @@ local function makeAnimatedComponent(toWrap)
 			end
 		end
 
-		props[Roact.Ref] = function(rbx)
+		props["ref"] = function(rbx)
 			self._rbx = rbx
 
 			-- forward the ref to the original component

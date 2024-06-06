@@ -114,16 +114,17 @@ function Map:didUpdate(_,prevState)
                     Holding = false
                 elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
                     self._component:setState {SelectPosition = input.Position}
-                    
+                   -- print(self._component)
                     local mapFrame = self.MapFrame:getValue()
                     
                     local scale = self.state.MapScale
-                    local mapPos = mapComponent:ToMapPosition(self.state.SelectPosition, scale, mapFrame)
+                    local mapPos = mapComponent:ToMapPosition(input.Position, scale, mapFrame)
                     local worldPos = mapComponent:ToWorldPosition(mapPos, scale)
                     
                     local function Done()
                         GUI:ClosePopup'AddMarker'
                         self._component:setState {SelectPosition = roact.None}
+                        print('deselected')
                       --  print(self.state.SelectPosition, 'DESELECTED')
                     end
 
@@ -168,6 +169,7 @@ function Map:didUpdate(_,prevState)
                     
                     --MapFrame.Position = UDim2.fromOffset(Pos.X,Pos.Y)
                     UpdatePos(Pos + input.Position - prevPos)
+                    print(self.state.SelectPosition)
                     --TWS:Create(MapFrame, TWInfo, {Position = UDim2.fromOffset(Pos.X,Pos.Y)   }):Play()
                     --MapFrame.Position = UDim2.fromOffset(Pos.X,Pos.Y)      
     
@@ -208,7 +210,7 @@ Frame
     local state = Map._component.state
     return GUI.newElement('BlankFrame', {}, {
         Map = GUI.newElement('Map', {
-            [roact.Ref] = Map.MapFrame,
+            ["_ref"] = Map.MapFrame,
             ShowMarkers = true,
             Scale = state.MapScale,
             Disabled = not state.selected,

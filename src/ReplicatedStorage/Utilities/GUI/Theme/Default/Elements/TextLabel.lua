@@ -15,7 +15,7 @@ type prop = {
     TextScale: number,
 }
 
-local function TextLabel(props: prop)
+local TextLabel = roact.forwardRef(function(props, ref)
     local textsize
     if props.TextScale then
         local camera = workspace.CurrentCamera
@@ -46,8 +46,8 @@ local function TextLabel(props: prop)
         TextColor3 = props.TextColor3 or Color3.new(1,1,1),
         TextStrokeColor3 = props.TextStrokeColor3 or Color3.new(),
         TextStrokeTransparency = props.TextStrokeTransparency or 1,
-        [roact.Ref] = props[roact.Ref]
+        ["ref"] = ref
     })
-end
+end)
 
 return TextLabel

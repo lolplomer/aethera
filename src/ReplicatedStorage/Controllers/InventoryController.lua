@@ -27,11 +27,11 @@ function InventoryController:KnitStart()
             if type.Position == path[5] then
                 self.EquipmentSwitched:Fire(item,path[3],path[5],Items[item])
             end
-            print("Equip change",path,value)
+         --   print("Equip change",path,value)
         elseif path[4] == 'Position' then
             local item = self:GetEquipmentItem(path[3], value)
             self.EquipmentSwitched:Fire(item,path[3],value, Items[item])
-            print("Position change",path,value)
+           -- print("Position change",path,value)
         end
     end)
 end

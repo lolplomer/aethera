@@ -29,7 +29,7 @@ return function (props)
         Position = props.Position,
         BackgroundColor3 = props.StrokeColor
     }, {
-        Children = roact.createFragment(props[roact.Children]),
+        Children =  roact.createElement(roact.Fragment, nil, props['children']),
         Corner = Corner(props.CornerRadius),
         InnerBar = roact.createElement("Frame", {
             BorderSizePixel = 0,
@@ -37,13 +37,13 @@ return function (props)
             AnchorPoint = Vector2.new(0.5,0.5),
             Size = UDim2.new(1,-(props.StrokeSizeX or props.StrokeSize or 0),1,-(props.StrokeSizeY or props.StrokeSize or 0)),
             BackgroundColor3 = props.InnerBarColor or ColorUtil.MultiplyValue(props.BarColor, 0.5),
-            [roact.Ref] = props.Ref
+            ["ref"] = props.Ref
         }, {
             Bar = roact.createElement("Frame", {
                 BorderSizePixel = 0,
                 Size = UDim2.fromScale((props.Progress or 0)/(props.MaxProgress or 1),1),
                 BackgroundColor3 = props.BarColor,
-                [roact.Ref] = props.BarRef
+                ["ref"] = props.BarRef
             }, {
                 Corner = Corner(props.BarCornerRadius or props.CornerRadius),
             }),
@@ -54,7 +54,7 @@ return function (props)
                 Size = UDim2.fromScale(1,1),
                 Text = `{props.Label}: {props.Progress}/{props.MaxProgress}`,
                 ZIndex = 2,
-                [roact.Ref] = props.LabelRef
+                ["ref"] = props.LabelRef
             })
         })
     })

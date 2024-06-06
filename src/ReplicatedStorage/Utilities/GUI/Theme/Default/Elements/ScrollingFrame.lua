@@ -8,5 +8,5 @@ return function(props)
         CanvasSize = UDim2.fromScale(0,0),
         ScrollBarThickness = props.ScrollBarThickness or 8,
         BorderSizePixel = 0,
-    }, props[roact.Children])
+    }, props['children'])
 end

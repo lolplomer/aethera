@@ -48,7 +48,8 @@ EquipPopup
                 end
             })
         end
-        return roact.createFragment(btns)
+        --return roact.createElement(roact.Fragment, nil, btns)
+        return roact.createElement(roact.Fragment, nil, btns)
     end)
 end)
 
@@ -152,7 +153,8 @@ MasterFrame
                     end
                 }) 
             end
-            return roact.createFragment(CategoryButtons)
+            --return roact.createElement(roact.Fragment, nil, CategoryButtons)
+            return roact.createElement(roact.Fragment, nil, CategoryButtons)
         end)
 
         equipmentBtnContainer

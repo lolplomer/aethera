@@ -43,7 +43,8 @@ function inventory:render()
             CellSize = self.props.CellSize or UDim2.fromScale(0.225,0.325),
             CellPadding = UDim2.fromScale(0.02,0.02)
         }),
-        Items = roact.createFragment(_items)
+        --Items = roact.createElement(roact.Fragment, nil, _items)
+        Items = roact.createElement(roact.Fragment, nil, _items)
     })
 end
 
@@ -66,7 +67,7 @@ end
 
 function inventory:willUnmount()
     if self.itemChangeConnection then
-        print("Disconnected itemChangeConnection")
+    --    print("Disconnected itemChangeConnection")
         self.itemChangeConnection:Disconnect()
         self.itemChangeConnection = nil
     end

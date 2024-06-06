@@ -17,16 +17,18 @@ guiutil.ImplementAnimatedOpenClose(viewer, {
 
 
 function viewer:init()
-    self.FrameRef = roact.createRef()
+    self.MainFrame = roact.createRef()
     self.StateLabel = roact.createRef()
 end
 
 function viewer:updateText(state, index)
     local label = self.StateLabel:getValue()
+    
+   -- warn('STATEVIEWER REF ON UPDATED:',self.StateLabel,self.StateLabel.current)
     label.Text = `{state or 'None'} ({index or ''})`
 end
 
-function viewer:didMount()
+function viewer:componentDidMount()
     self:updateText(CharacterController:GetState())
     CharacterController.StateChanged:Connect(function(state, index)
         self:updateText(state, index)
@@ -34,11 +36,12 @@ function viewer:didMount()
 end
 
 function viewer:didUpdate()
+   -- warn('STATEVIEWER REF ON UPDATED:',self.StateLabel,self.StateLabel.current)
     guiutil.CheckDisabledProperty(self)
 end
 
 function viewer:render()
-    print('Rendering viewer')
+ --   print('Rendering viewer')
     return roact.createElement('ScreenGui', {
         ResetOnSpawn = false,
         ZIndexBehavior = 'Sibling'
@@ -46,13 +49,13 @@ function viewer:render()
         Main = roact.createElement('CanvasGroup', {
             BackgroundTransparency = 1,
             Size = UDim2.fromScale(1,1),
-            [roact.Ref] = self.FrameRef,
+            ref = self.MainFrame,
         }, {
             StateLabel = GUI.newElement('TextLabel', {
                 Position = UDim2.new(1,-20,0.5,0),
                 AnchorPoint = Vector2.new(1,.5),
                 Size = UDim2.fromScale(0.07,0.05),
-                [roact.Ref] = self.StateLabel,
+                ref = self.StateLabel,
                 BackgroundTransparency = 1,
                 TextXAlignment = 'Right'
             })

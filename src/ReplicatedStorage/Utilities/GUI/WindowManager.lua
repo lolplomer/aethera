@@ -10,11 +10,12 @@ local roact = require(ReplicatedStorage:WaitForChild"Utilities":WaitForChild"Roa
 local windows = {}
 
 local Frame = require(script.Parent:WaitForChild"FrameManager")
+local StarterGui = game:GetService("StarterGui")
 local TWS = game:GetService"TweenService"
 local Tween = TweenInfo.new(0.15)
 
 local IconManager = require(script.Parent:WaitForChild"IconManager")
-local Promise = require(ReplicatedStorage.Utilities:WaitForChild"Promise")
+--local Promise = require(ReplicatedStorage.Utilities:WaitForChild"Promise")
 
 local GuiUtil = require(script.Parent:WaitForChild"GUIUtil")
 local Util = require(ReplicatedStorage.Utilities:WaitForChild"Util")
@@ -23,11 +24,27 @@ local coreGuis = {
     Backpack = true,
     Chat = true,
     PlayerList = true,
+    EmotesMenu = true,
 }
 
-local function SetCoreGuiEnabled(enabled)
+local CoreGuiInfo = nil
+
+local function RevertCoreGui()
+    if CoreGuiInfo then
+        for name in coreGuis do
+            game.StarterGui:SetCoreGuiEnabled(name, CoreGuiInfo[name] or true)
+        end
+        CoreGuiInfo = nil
+    end
+
+end
+
+local function SetCoreGuiDisabled()
+    RevertCoreGui()
+    CoreGuiInfo = {}
     for name in coreGuis do
-        game.StarterGui:SetCoreGuiEnabled(name, enabled)
+        CoreGuiInfo[name] = StarterGui:GetCoreGuiEnabled(name)
+        game.StarterGui:SetCoreGuiEnabled(name, false)
     end
 end
 
@@ -63,21 +80,22 @@ function windowManager:SwitchWindow(WindowName, BypassDebounce)
     local window = windows[WindowName]
     local current = selectedWindow
 
-    print('Switching window',WindowName)
+    --print('Switching window',WindowName)
 
     if not Util.Debounce('WindowSwitch', 1) and not BypassDebounce then
         return
     end
-    print('Switching window 2')
+   -- print('Switching window 2')
     if (not window) and current then
-        print('Disabling blur')
+   --     print('Disabling blur')
         current.DisableBlur:Play()
         current._component:close()
         current._component:setState {selected = false}
 
         if not pendingWindow then
             GUI:EnableAll()
-            SetCoreGuiEnabled(true)
+            RevertCoreGui()
+            --SetCoreGuiEnabled(true)
             IconManager.Controller.setTopbarEnabled(true)
         end
         
@@ -89,7 +107,7 @@ function windowManager:SwitchWindow(WindowName, BypassDebounce)
 
         pendingWindow = window
         if current then
-            print('Has currently open window, closing:')
+      --      print('Has currently open window, closing:')
             --print(current, current.Name)
             -- current.DisableBlur:Play()
             -- --GUI:DisableUI(current.Name)
@@ -97,7 +115,7 @@ function windowManager:SwitchWindow(WindowName, BypassDebounce)
             --IconManager(current.Name):deselect()
             windowManager:SwitchWindow(nil, true)
         end
-        print('Continuing enable new window')
+       -- print('Continuing enable new window')
         pendingWindow = nil
         
         GUI:DisableAllExcept ({WindowName})
@@ -107,7 +125,8 @@ function windowManager:SwitchWindow(WindowName, BypassDebounce)
         window._component:setState {selected = true}
 
         IconManager.Controller.setTopbarEnabled(false)
-        SetCoreGuiEnabled(false) 
+        SetCoreGuiDisabled()
+        --SetCoreGuiEnabled(false) 
     end
     
     selectedWindow = window
@@ -157,7 +176,7 @@ function windowManager.new(WindowName, props)
         window._component = self
         window.props = self.props
 
-        self.FrameRef = roact.createRef()
+        self.MainFrame = roact.createRef()
         self.TopbarOffset = UDim2.fromScale(-0.04,0.03)
         if window.init then
             window:init()
@@ -165,84 +184,99 @@ function windowManager.new(WindowName, props)
     end 
 
     function component:render()
-        local Child
-        if not props.FullSize then
+        -- local Child
+        -- if not props.FullSize then
             
-            Child = {
-                Frame = GUI.newElement("Frame", {
-                    Visible = true,
-                    [roact.Ref] = self.FrameRef,
-                    Size = self.Size,
-                    
-                }, {
-                    Topbar = GUI.newElement("FrameTopbar", {
-                        Title = WindowName,
-                        Position = self.TopbarOffset,
-                    }),
-                    CloseButton = GUI.newElement("CloseButton", {
-                        Size = UDim2.fromScale(0.13,0.13),
-                        AnchorPoint = Vector2.new(1,0),
-                        Position = UDim2.fromScale(.98, self.TopbarOffset.Y.Scale-0.015),
-                        Callback = function()
-                            windowManager:SwitchWindow(nil, true)
-                            --self.icon:deselect()
-                        end
-                    }),
-                    MainFrame = roact.createElement("Frame", {
-                        BackgroundTransparency = 1,
-                        Position = UDim2.fromScale(0.5,0.17),
-                        Size = UDim2.new(1,-10,0.82,0),
-                        AnchorPoint = Vector2.new(0.5,0),
-                        
-                    }, {
-                        Frame = window.Frame:render()
-                    })
-                }),
-            }
+        --     Child = {
+        --         Frame = ,
+        --     }
 
-        else
-            Child = {
-                Frame = roact.createElement('CanvasGroup', {
-                    [roact.Ref] = self.FrameRef,
-                    Size = UDim2.fromScale(1,1),
-                    BackgroundColor3 = Color3.fromRGB(0,0,0),
-                    BackgroundTransparency = 0.6,
-                    AnchorPoint = Vector2.new(0.5,0.5),
-                    Position = UDim2.fromScale(0.5,0.5)
-                }, {
-                    CloseButton = GUI.newElement("CloseButton", {
-                        Size = UDim2.fromScale(0.07,0.07),
-                        AnchorPoint = Vector2.new(1,0),
-                        Position = UDim2.fromScale(.98, self.TopbarOffset.Y.Scale-0.015),
-                        Callback = function()
-                            print('Callback')
-                            windowManager:SwitchWindow(nil)
-                            --self.icon:deselect()
-                        end
-                    }),
-                    MainFrame = roact.createElement("Frame", {
-                        BackgroundTransparency = 1,
-                        Position = UDim2.fromScale(0.5,0.11),
-                        Size = UDim2.new(0.95,0,0.82,0),
-                        AnchorPoint = Vector2.new(0.5,0),
-                        ClipsDescendants = true,
-                    }, {
-                        Frame = window.Frame:render()
-                    })
-                })
-            }
-        end
+        -- else
+            
+        --     Child = {
+        --         Frame = 
+        --     }
+        -- end
 
-        return roact.createElement("ScreenGui", {
-            ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-            ResetOnSpawn = false,
-            DisplayOrder = 99,
-            IgnoreGuiInset = true
-        }, Child)
+        -- return roact.createElement("ScreenGui", {
+        --     ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        --     ResetOnSpawn = false,
+        --     DisplayOrder = 99,
+        --     IgnoreGuiInset = true
+        -- }, Child)
+
+        return 
+        
+        props.FullSize and 
+        
+        roact.createElement('CanvasGroup', {
+            ["ref"] = self.MainFrame,
+            Size = UDim2.fromScale(1,1),
+            BackgroundColor3 = Color3.fromRGB(0,0,0),
+            BackgroundTransparency = 0.6,
+            AnchorPoint = Vector2.new(0.5,0.5),
+            Position = UDim2.fromScale(0.5,0.5)
+        }, {
+            CloseButton = GUI.newElement("CloseButton", {
+                Size = UDim2.fromScale(0.07,0.07),
+                AnchorPoint = Vector2.new(1,0),
+                Position = UDim2.fromScale(.98, self.TopbarOffset.Y.Scale-0.015),
+                Callback = function()
+                    --print('Callback')
+                    windowManager:SwitchWindow(nil)
+                    --self.icon:deselect()
+                end
+            }),
+            MainFrame = roact.createElement("Frame", {
+                BackgroundTransparency = 1,
+                Position = UDim2.fromScale(0.5,0.11),
+                Size = UDim2.new(0.95,0,0.82,0),
+                AnchorPoint = Vector2.new(0.5,0),
+                ClipsDescendants = true,
+            }, {
+                Frame = window.Frame:render()
+            })
+        }) 
+        
+        
+        or 
+        
+        
+        
+        GUI.newElement("Frame", {
+            Visible = true,
+            ["ref"] = self.MainFrame,
+            Size = self.Size,
+            
+        }, {
+            Topbar = GUI.newElement("FrameTopbar", {
+                Title = WindowName,
+                Position = self.TopbarOffset,
+            }),
+            CloseButton = GUI.newElement("CloseButton", {
+                Size = UDim2.fromScale(0.13,0.13),
+                AnchorPoint = Vector2.new(1,0),
+                Position = UDim2.fromScale(.98, self.TopbarOffset.Y.Scale-0.015),
+                Callback = function()
+                    windowManager:SwitchWindow(nil, true)
+                    --self.icon:deselect()
+                end
+            }),
+            MainFrame = roact.createElement("Frame", {
+                BackgroundTransparency = 1,
+                Position = UDim2.fromScale(0.5,0.17),
+                Size = UDim2.new(1,-10,0.82,0),
+                AnchorPoint = Vector2.new(0.5,0),
+                
+            }, {
+                Frame = window.Frame:render()
+            })
+        })
+
     end
 
 
-    function component:didUpdate(prevProps,prevState)
+    function component:componentDidUpdate(prevProps,prevState)
       --  print('didUpdated', WindowName, window.onUpdated, window)
         GuiUtil.CheckDisabledProperty(self, prevProps)
        -- print('Didupdated 2', WindowName, window.onUpdated, window)
@@ -252,7 +286,8 @@ function windowManager.new(WindowName, props)
         end
     end
 
-    function component:didMount(...)
+    function component:componentDidMount(...)
+        --print(WindowName,'FrameRef:',self.MainFrame)
         local InputController = knit.GetController("InputController")
         self:close()    
 

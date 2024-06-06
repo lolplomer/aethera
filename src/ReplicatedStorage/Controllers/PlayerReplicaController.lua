@@ -25,7 +25,7 @@ function PlayerReplicaController:GetReplica(class)
 end
 
 ReplicaController.NewReplicaSignal:Connect(function(replica)
-    print('new replica:',replica.Class, replica.Tags.Player)
+    --print('new replica:',replica.Class, replica.Tags.Player)
     if replica.Tags.Player == Player then
         Replicas[replica.Class] = setmetatable({
             Replica = replica

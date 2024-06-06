@@ -60,13 +60,13 @@ function CombatService:KnitInit()
     KeybindService:OnKeybindTrigger('WeaponEquipmentSwitchPrevious', function(player: Player)
         local Inventory = InventoryService:GetInventory(player)
         Inventory:PreviousEquipment('Weapon')
-        print('prev')
+       -- print('prev')
     end)
 
     KeybindService:OnKeybindTrigger('WeaponEquipmentSwitchNext', function(player: Player)
         local Inventory = InventoryService:GetInventory(player)
         Inventory:NextEquipment('Weapon')
-        print('next')
+       -- print('next')
     end)
 end
 

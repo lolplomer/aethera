@@ -141,7 +141,7 @@ end)
                 Size = scale(1,1),
                 Text = `Lv. {StatsReplica.Level}`,
                 layoutOrder = i,
-                [roact.Ref] = component.Lvl
+                ["ref"] = component.Lvl
             })
         end)
 
@@ -168,7 +168,7 @@ end)
 
 GUIUtil.ImplementAnimatedOpenClose(HUD, {
     CloseSizeScale = 1,
-    Size = scale(0.4,0.4)
+    Size = scale(0.4,0.4) 
 })
 
 function HUD:init()
@@ -176,7 +176,7 @@ function HUD:init()
     self.MP = roact.createRef()
     self.Exp = roact.createRef()
     self.Lvl = roact.createRef()
-    self.FrameRef = roact.createRef()
+    self.MainFrame = roact.createRef()
 end
 
 function HUD:didUpdate(prevProps)
@@ -193,7 +193,7 @@ function HUD:render()
             Size = scale(0.4,0.4),
             AnchorPoint = Vector2.new(0.5,1),
             Position = scale(0.5,0.97),
-            [roact.Ref] = self.FrameRef
+            ["ref"] = self.MainFrame
         }, {
             Ratio = Ratio(666.77/90),
             Children = HUDFrame:render(1, self)

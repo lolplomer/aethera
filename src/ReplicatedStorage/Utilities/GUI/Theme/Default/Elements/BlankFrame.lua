@@ -1,6 +1,6 @@
 local roact = require(game.ReplicatedStorage:WaitForChild('Utilities'):WaitForChild('Roact'))
 
-return function (props)
+return roact.forwardRef(function(props, ref)
     if props.ClipsDescendants == nil then
         props.ClipsDescendants = true
     end
@@ -9,9 +9,9 @@ return function (props)
         Size = props.Size or UDim2.fromScale(1,1),
         Position = props.Position,
         ClipsDescendants = props.ClipsDescendants,
-        ZIndex = props.ZIndex,
-        [roact.Ref] = props[roact.Ref]
+        ZIndex = props.ZIndex   ,
+        ["ref"] = ref
     }, {
-        Children = roact.createFragment(props[roact.Children])
+        Children =  roact.createElement(roact.Fragment, nil, props['children'])
     })
-end
+end)

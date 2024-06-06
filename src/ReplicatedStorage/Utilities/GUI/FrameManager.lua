@@ -56,6 +56,9 @@ function Frame:render(LayoutOrder, props)
         end
     end
 
+    --print('Frame Children:', children)
+
+
     local transparency = 1
     if self.Window then
         transparency = self.Window.state.FrameTransparency or 1
@@ -107,7 +110,8 @@ function Frame:render(LayoutOrder, props)
             PaddingRight = UDim.new(0,self.Padding.Right or 0),
             PaddingTop = UDim.new(0,self.Padding.Top or 0)
         }),
-        Children = roact.createFragment(children)
+        --Children = roact.createElement(roact.Fragment, nil, children)
+        Children = roact.createElement(roact.Fragment, nil, children)
     })
 end
 

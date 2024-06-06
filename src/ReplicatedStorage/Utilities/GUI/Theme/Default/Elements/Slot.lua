@@ -83,7 +83,7 @@ function Slot:render()
             self.UsingViewport = true
             UseImageLabel = false
 
-            iconProperty[roact.Ref] = self.viewportRef
+            iconProperty["ref"] = self.viewportRef
             iconProperty.CurrentCamera = self.cameraRef
             iconProperty.Size = UDim2.fromScale(0.9,0.9)
             iconProperty.LightColor = Color3.new(1, 1, 1)
@@ -124,7 +124,7 @@ function Slot:render()
        BackgroundColor3 = OuterFrameColor,
        BorderSizePixel = 0,
        LayoutOrder =  (self.props.LayoutOrder or -rating.Rank) - (props.Equipped and 1000 or 0),
-       [roact.Ref] = self.outerFrameRef,
+       ["ref"] = self.outerFrameRef,
        Size = self.props.Size or UDim2.fromScale(1,1),
      --  GroupTransparency = self.transparency,
    }, {
@@ -186,7 +186,7 @@ function Slot:render()
            BackgroundColor3 = rating.Color,
            Size = UDim2.fromScale(0.87,0.87),
            BorderSizePixel = 0,
-           [roact.Ref] = self.innerFrameRef,
+           ["ref"] = self.innerFrameRef,
        }, {
            UICorner = roact.createElement(Corner),
         --    UIGradient = roact.createElement(Gradient,{
@@ -198,7 +198,7 @@ function Slot:render()
                     
                     FieldOfView = 9,
                     CFrame = cameraCF,
-                    [roact.Ref] = self.cameraRef,
+                    ["ref"] = self.cameraRef,
 
                 })
             }),

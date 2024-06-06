@@ -73,7 +73,8 @@ function StatList:render()
             Size = UDim2.fromScale(0.95,0.09)
         })
     end
-    return roact.createFragment(stats)
+    --return roact.createElement(roact.Fragment, nil, stats)
+    return roact.createElement(roact.Fragment, nil, stats)
 end
 
 Window.Frame
@@ -156,7 +157,8 @@ Window.Frame
                     --     Padding = UDim.new(0,3)
                     -- })
                    
-                    return roact.createFragment(elements)
+                    --return roact.createElement(roact.Fragment, nil, elements)
+                    return roact.createElement(roact.Fragment, nil, elements)
                 end)
 
             end)

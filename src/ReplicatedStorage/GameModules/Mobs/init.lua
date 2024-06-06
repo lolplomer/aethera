@@ -1,13 +1,7 @@
-local None = 'None'
+local module = {}
 
-local loaded = {}
+for _,v in script:GetChildren() do
+    module[v.Name] = require(v)
+end
 
-return setmetatable({}, {
-    __index = function(_,index)
-        local v = loaded[index]
-        if not v then
-            loaded[index] = script:FindFirstChild(index) and require(script[index]) or None
-        end
-        return v == None and nil or v
-    end
-})
+return module

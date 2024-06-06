@@ -42,7 +42,7 @@ local function CreateMarker(props)
         Image = props.Icon,
         AnchorPoint = Vector2.new(0.5,0.5),
         Position = props.Position and UDim2.fromOffset(props.Position.X,props.Position.y) or UDim2.fromScale(.5,.5),
-        [roact.Ref] = props[roact.Ref]
+        ["ref"] = props["ref"]
     })
 end
 
@@ -187,7 +187,7 @@ function map:ToWorldPosition(mapPosition, _scale)
 end
 
 function map:ToMapPosition(position: Vector2, _scale, _mapFrame)
-    local mapFrame = _mapFrame or self.props[roact.Ref]:getValue()
+    local mapFrame = _mapFrame or self.props["_ref"]:getValue()
     local scale = _scale or self.props.Scale
     local absPos = mapFrame.AbsolutePosition
     local pos = Vector2.new(position.X,position.Y)
@@ -198,7 +198,7 @@ function map:ToMapPosition(position: Vector2, _scale, _mapFrame)
 end
 
 function map:setMapScale(scale)
-    local mapFrame = self.props[roact.Ref]:getValue()
+    local mapFrame = self.props["_ref"]:getValue()
     local initPos = mapSettings.InitialPosition
 
     for _, v:ImageLabel in mapFrame:GetChildren() do
@@ -219,7 +219,7 @@ end
 
 function map:didUpdate(prevProps)
 
-   -- local mapFrame = self.props[roact.Ref]:getValue()
+   -- local mapFrame = self.props["ref"]:getValue()
     
     self.animateTime = os.clock() + tweenInfo.Time
     local scale = self.props.Scale
@@ -243,7 +243,7 @@ function map:didUpdate(prevProps)
      
      if self.props.SelectPosition and self.props.SelectPosition ~= prevProps.SelectPosition then
         self.MarkerSelectPosition = self:ToMapPosition(self.props.SelectPosition)
-        self:UpdateMarkerPosition(self.props[roact.Ref]:getValue().MarkerContainer.Markers, 1/ANIMATESPEED, nil, true)
+        self:UpdateMarkerPosition(self.props["_ref"]:getValue().MarkerContainer.Markers, 1/ANIMATESPEED, nil, true)
      elseif self.props.SelectPosition == nil then
         self.MarkerSelectPosition = nil
      end
@@ -293,18 +293,17 @@ function map:render()
             )),
         }
     end
-    
 
     return roact.createElement('Frame', {
         Size = UDim2.fromScale(0,0),
         AnchorPoint = Vector2.new(.5,.5),
-        [roact.Ref] = self.props[roact.Ref]
+        ["ref"] = self.props._ref
     }, {
-        Map = roact.createFragment(mapImages),
+        Map = roact.createElement(roact.Fragment, nil, mapImages),
         MarkerContainer = GUI.newElement('BlankFrame', {
             ClipsDescendants=false,
             ZIndex=3,
-            [roact.Ref] = self.MarkerRef
+            ["ref"] = self.MarkerRef
         }, {
             Players = GUI.newElement('BlankFrame', {ClipsDescendants = false, ZIndex = 5}
             , PlayerMarkers),
@@ -312,6 +311,8 @@ function map:render()
             , Markers)
         })
     })
+
+    
 end
 
 return map

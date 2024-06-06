@@ -7,6 +7,4 @@ mob.RawStats = {
     HP = 500
 }
 
-
-
 return mob

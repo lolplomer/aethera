@@ -11,6 +11,7 @@ return function (props)
         UICorner = roact.createElement("UICorner", {
             CornerRadius = UDim.new(0,6)
         }),
-        Children = roact.createFragment(props[roact.Children])
+        --Children = roact.createElement(roact.Fragment, nil, props['children'])
+        Children =  roact.createElement(roact.Fragment, nil, props['children'])
     })
 end

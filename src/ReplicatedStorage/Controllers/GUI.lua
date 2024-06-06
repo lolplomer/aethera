@@ -3,11 +3,14 @@ local packages = game.ReplicatedStorage:WaitForChild"Packages"
 local knit = require(packages:WaitForChild("Knit"))
 local signal = require(packages:WaitForChild"Signal")
 local symbol = require(packages:WaitForChild"Symbol")
+local react =require(packages:WaitForChild('react'))
+local react_roblox = require(packages:WaitForChild('react-roblox'))
 
 local controller = knit.CreateController{Name = script.Name}
 
 local GUIUtilities = game.ReplicatedStorage:WaitForChild"Utilities":WaitForChild"GUI"
-local roact = require(game.ReplicatedStorage.Utilities:WaitForChild'Roact')
+local roact_old = require(game.ReplicatedStorage.Utilities:WaitForChild'Roact')
+
 
 local player = game.Players.LocalPlayer
 
@@ -28,13 +31,24 @@ controller.Color = require(misc:WaitForChild"ColorUtil")
 controller.UIPropertyChanged = signal.new()
 controller.DisableScroll = false
 
+local function createHandle(name)
+    
+    local handle = Instance.new('ScreenGui')
+    handle.Parent = game.Players.LocalPlayer.PlayerGui
+    handle.ZIndexBehavior =Enum.ZIndexBehavior.Sibling
+    handle.IgnoreGuiInset = true
+    handle.Name = name or 'ScreenGui'
+    handle.ResetOnSpawn = false
+
+    return handle
+end
 
 function controller.Tween(object, goal, customTweenConfig)
     TWS:Create(object, customTweenConfig or TweenConfig, goal):Play()
 end
 
 function controller.newElement(Element, props, children)
-    local element = roact.createElement(Elements[Element], props or {}, children)
+    local element = react.createElement(Elements[Element], props or {}, children)
     return element
 end
 
@@ -46,9 +60,9 @@ function controller:UpdateUI(name, props)
     assert(Interfaces[name], `Interface named {name} doesn't exist`)
     local tree = Interfaces[name].tree
     
-    local component = roact.createElement(require(interfaceModules[name]), props)
-    tree = roact.update(tree, component)
-  --  print("updating", name)
+    local component = react.createElement(require(interfaceModules[name]), props)
+    tree:render(component)
+ --   warn("updating", name)
     Interfaces[name].props = props
 end
 
@@ -109,22 +123,26 @@ function controller:CreatePopup(element, id, props, DeselectedCallback)
     if Popups[id] then
         self:UpdatePopup(id, layout)
     else
-        local tree = roact.mount(layout, player.PlayerGui, 'Popup')
-        Popups[id] = tree
+        --local tree = roact.mount(layout, player.PlayerGui, 'Popup')
+        local root = react_roblox.createRoot(createHandle())
+        root:render(layout)
+        Popups[id] = root
     end
     
 end
 
 function controller:UpdatePopup(id, newElement)
     if Popups[id] then
-        Popups[id] = roact.update(Popups[id], newElement)
+        Popups[id]:render(newElement)
+        --Popups[id] = roact.update(Popups[id], newElement)
     end
 end
 
 function controller:ClosePopup(id)
     local tree = Popups[id]
     if tree then
-        roact.unmount(tree)
+        tree:unmount()
+        --roact.unmount(tree)
     end
     Popups[id] = nil
 end
@@ -148,9 +166,19 @@ end
 
 function controller:KnitStart()
 
-    roact.setGlobalConfig({
-        elementTracing = true
-    })
+    -- roact_old.setGlobalConfig({
+    --     elementTracing = true
+    -- })
+
+    local DisabledCoreGuis = {
+        Enum.CoreGuiType.Backpack,
+        Enum.CoreGuiType.PlayerList,
+        Enum.CoreGuiType.EmotesMenu
+    }
+
+    for _,v in DisabledCoreGuis do
+        game.StarterGui:SetCoreGuiEnabled(v, false)
+    end
 
     controller.Icon = require(GUIUtilities:WaitForChild"IconManager")
     controller.Window = require(GUIUtilities:WaitForChild"WindowManager")
@@ -162,11 +190,21 @@ function controller:KnitStart()
         interface.Name = interfaceModule.Name
         if interface.Disabled then continue end
         task.spawn(function()
-            local component = roact.createElement(interface)
+
+            local root = react_roblox.createRoot(createHandle(interface.Name))
+            
+            root:render(react.createElement(interface))
+        --    print('rendered',interface.Name)
             Interfaces[interfaceModule.Name] = {
-                tree = roact.mount(component, player.PlayerGui, interfaceModule.Name),
+                tree = root,
                 props = {Disabled = false}
             }
+
+            -- local component = roact.createElement(interface)
+            -- Interfaces[interfaceModule.Name] = {
+            --     tree = roact.mount(component, player.PlayerGui, interfaceModule.Name),
+            --     props = {Disabled = false}
+            -- }
         end)
     end
 end

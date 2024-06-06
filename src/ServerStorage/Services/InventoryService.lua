@@ -185,7 +185,7 @@ local Equipment = {} do
 
     -- Updates an equipment
     function Equipment:Update(Type, Subtype)
-        print('Updating',Type,'Equipments')
+        --print('Updating',Type,'Equipments')
         local Current = self.Equipment[Type]
         
         local TypeInfo = items.Type[Type]

@@ -63,7 +63,7 @@ function TextButton:render()
             Position = UDim2.fromScale(.5,0),
             AnchorPoint = Vector2.new(0.5,0),
             
-            [roact.Ref] = self.innerButtonRef,
+            ["ref"] = self.innerButtonRef,
             [roact.Event.MouseEnter] = function()
                 GUI.Tween(self.innerButtonRef:getValue(), {ImageColor3 = GUI.Color.MultiplyValue(self.buttonColor, 0.8)})
             end,
@@ -83,7 +83,7 @@ function TextButton:render()
                 TextXAlignment = props.TextXAlignment or Enum.TextXAlignment.Center,
                 TextYAlignment = props.TextYAlignment or Enum.TextYAlignment.Center
             }),
-            Children = roact.createFragment(props[roact.Children])
+            Children = roact.createElement(roact.Fragment, nil, props['children'])
         }),
 
 

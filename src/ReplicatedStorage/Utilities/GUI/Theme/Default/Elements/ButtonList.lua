@@ -53,6 +53,7 @@ return function (props)
             VerticalAlignment = Enum.VerticalAlignment.Center,
             Padding = UDim.new(0.04,0)
         }),
-        Buttons = roact.createFragment(buttons)
+        --Buttons = roact.createElement(roact.Fragment, nil, buttons)
+        Buttons = roact.createElement(roact.Fragment, nil, buttons)
     })
 end

@@ -93,7 +93,7 @@ function CharacterClass:ResetWeaponAnimations()
     self.WeaponSubtype = Subtype
     self:RefreshPlayingTracks()
 
-    print('Resetted Weapon Animations')
+   -- print('Resetted Weapon Animations')
     self.AnimTrove = AnimTrove
 
     for _,v in States do
@@ -121,7 +121,7 @@ function CharacterClass:SetupAnimations()
 
     self.Cleaner:Add(
         InvController:ListenOnEquipmentSwitch('Weapon', function(item, position, itemInfo)
-            print('Weapon Changed:', item, position, itemInfo)
+        --    print('Weapon Changed:', item, position, itemInfo)
 
             self.Weapon.Id = item and item[3]
             self.Weapon.Data = item
@@ -345,6 +345,7 @@ end
 
 function Module:Initialize(CharModel: Model)
     local Cleaner = Trove.new()
+    local SignalTrove = Trove.new()
 
     CombatService = Knit.GetService"CombatService"
 
@@ -357,14 +358,14 @@ function Module:Initialize(CharModel: Model)
 
     local conn = game:GetService("TextChatService").SendingMessage:Connect(function(message)
         local args = message.Text:split(" ")
-        print(message.Text, args)
+       -- print(message.Text, args)
         if args[1] == 'setwalkspeed' then
             local value, prop = tonumber(args[2]), tonumber(args[3])
-            print('setting walkspeed',value,prop)
+          --  print('setting walkspeed',value,prop)
             Priority.Set(Humanoid, 'WalkSpeed', value, prop)
         end
     end)
-    print('chatted:',conn)
+    --print('chatted:',conn)
 
     local PriorityHandler = Priority:GetHandler(Humanoid)
 
@@ -379,6 +380,7 @@ function Module:Initialize(CharModel: Model)
         Character = CharModel,
         Humanoid = Humanoid,
         Animator = Humanoid:WaitForChild"Animator",
+        Root = CharModel:WaitForChild("HumanoidRootPart"),
         Active = true,
         Cleaner = Cleaner,
         State = nil,
@@ -401,7 +403,7 @@ function Module:Initialize(CharModel: Model)
         Request  = 1,
         CD = {},
 
-        StateChanged = Cleaner:Construct(signal)
+        StateChanged = SignalTrove:Construct(signal)
     }, CharacterClass)
 
     Cleaner:Add(function()
@@ -415,6 +417,7 @@ function Module:Initialize(CharModel: Model)
 
     Cleaner:Connect(Character.Humanoid.Died, function()
         Cleaner:Destroy()
+        SignalTrove:Destroy()
     end)
 
     Character:SetupStates()

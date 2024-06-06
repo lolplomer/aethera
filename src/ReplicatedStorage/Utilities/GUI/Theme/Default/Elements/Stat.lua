@@ -52,7 +52,7 @@ function popup:render()
         PaddingTop = padding
     })
 
-    return roact.createFragment(modifiers)
+    return roact.createElement(roact.Fragment, nil, modifiers)
 end
 
 return function(props)

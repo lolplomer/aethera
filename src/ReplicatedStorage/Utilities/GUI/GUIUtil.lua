@@ -30,7 +30,7 @@ function util.ImplementAnimatedOpenClose(component, config)
     function component:open()
         task.wait()
         self:cancelClose()
-        local MainFrame = self.FrameRef:getValue()
+        local MainFrame = self.MainFrame:getValue()
         MainFrame.Visible = true
         MainFrame.GroupTransparency = 1
         TWS:Create(MainFrame, Tween, {
@@ -45,7 +45,7 @@ function util.ImplementAnimatedOpenClose(component, config)
         local activeClose; activeClose = Promise.new(function(resolve)
             
             self.Visible = false
-            local MainFrame = self.FrameRef:getValue()
+            local MainFrame = self.MainFrame:getValue()
             TWS:Create(MainFrame, Tween, {
                 GroupTransparency = 1,
                 Size = UDim2.fromScale(config.Size.X.Scale*config.CloseSizeScale,config.Size.Y.Scale*config.CloseSizeScale)
