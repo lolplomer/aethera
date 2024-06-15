@@ -3,6 +3,8 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local States = {}
 
+local Knit = require(ReplicatedStorage.Packages.Knit)
+
 local Promise = require(ReplicatedStorage:WaitForChild("Utilities"):WaitForChild("Promise"))
 local Priority = require(ReplicatedStorage.Utilities:WaitForChild"Priority")
 local Trove = require(ReplicatedStorage.Packages.Trove)
@@ -60,6 +62,7 @@ States.Attack = {
     Trigger = function(Character:{UserData:{}})
 
         local track:AnimationTrack
+        local cancelled = false
         return Promise.new(function(resolve)
 
             local userdata = Character.UserData
@@ -90,6 +93,12 @@ States.Attack = {
                 track:AdjustSpeed(t[2])
                 track.Priority =Enum.AnimationPriority.Action4
 
+                task.delay(0.2, function()
+                    if not cancelled then
+                        Knit.GetService('CombatService'):NormalAttack()
+                    end
+                end)
+
                 task.wait(t[1]/t[2])
                 Character:RefreshPlayingTracks()
                 if sequence == #tracks then
@@ -105,6 +114,7 @@ States.Attack = {
             --     walkspeed:Dispose()
             -- end
             if status == 'Cancelled' then
+                cancelled = true
                 Character:StopTrack('Attack')    
             end
             
@@ -117,69 +127,71 @@ States._character = {
     Init = function(self)
         local cleaner = self.Cleaner:Extend()
 
-        local walkKeyBinds = {
-            Forward = { Key = Enum.KeyCode.W, Direction = Enum.NormalId.Front },
-            Backward = { Key = Enum.KeyCode.S, Direction = Enum.NormalId.Back },
-            Left = { Key = Enum.KeyCode.A, Direction = Enum.NormalId.Left },
-            Right = { Key = Enum.KeyCode.D, Direction = Enum.NormalId.Right }
-        }
+        -- local walkKeyBinds = {
+        --     Forward = { Key = Enum.KeyCode.W, Direction = Enum.NormalId.Front },
+        --     Backward = { Key = Enum.KeyCode.S, Direction = Enum.NormalId.Back },
+        --     Left = { Key = Enum.KeyCode.A, Direction = Enum.NormalId.Left },
+        --     Right = { Key = Enum.KeyCode.D, Direction = Enum.NormalId.Right }
+        -- }
 
-        local camera = workspace.CurrentCamera
-        local character: Model = self.Character
-        local root = character.HumanoidRootPart
+        -- local camera = workspace.CurrentCamera
+        -- local character: Model = self.Character
+        -- local root = character.HumanoidRootPart
         
-        local function getWalkDirectionCameraSpace()
-            local walkDir = Vector3.new()
+        -- local function getWalkDirectionCameraSpace()
+        --     local walkDir = Vector3.new()
         
-            for _, keyBind in pairs(walkKeyBinds) do
-                if UserInputService:IsKeyDown(keyBind.Key) then
-                    walkDir += Vector3.FromNormalId( keyBind.Direction )
-                end
-            end
+        --     for _, keyBind in pairs(walkKeyBinds) do
+        --         if UserInputService:IsKeyDown(keyBind.Key) then
+        --             walkDir += Vector3.FromNormalId( keyBind.Direction )
+        --         end
+        --     end
         
-            if walkDir.Magnitude > 0 then --(0, 0, 0).Unit = NaN, do not want
-                walkDir = walkDir.Unit --Normalize, because we (probably) changed an Axis so it's no longer a unit vector
-            end
+        --     if walkDir.Magnitude > 0 then --(0, 0, 0).Unit = NaN, do not want
+        --         walkDir = walkDir.Unit --Normalize, because we (probably) changed an Axis so it's no longer a unit vector
+        --     end
             
-            return walkDir
-        end
+        --     return walkDir
+        -- end
         
-        local function getWalkDirectionWorldSpace()
-            local walkDir = camera.CFrame:VectorToWorldSpace( getWalkDirectionCameraSpace() )
-            walkDir *= Vector3.new(1, 0, 1) --Set Y axis to 0
+        -- local function getWalkDirectionWorldSpace()
+        --     local walkDir = camera.CFrame:VectorToWorldSpace( getWalkDirectionCameraSpace() )
+        --     walkDir *= Vector3.new(1, 0, 1) --Set Y axis to 0
         
-            if walkDir.Magnitude > 0 then --(0, 0, 0).Unit = NaN, do not want
-                walkDir = walkDir.Unit --Normalize, because we (probably) changed an Axis so it's no longer a unit vector
-            end
+        --     if walkDir.Magnitude > 0 then --(0, 0, 0).Unit = NaN, do not want
+        --         walkDir = walkDir.Unit --Normalize, because we (probably) changed an Axis so it's no longer a unit vector
+        --     end
         
-            return walkDir
-        end
+        --     return walkDir
+        -- end
         
-        local targetMoveVelocity = Vector3.new()
-        local moveVelocity = Vector3.new()
-        local moveAcceleration = 14
+        -- local targetMoveVelocity = Vector3.new()
+        -- local moveVelocity = Vector3.new()
+        -- local moveAcceleration = 14
 
         
         local function lerp(a,b,t)
             return a+(b-a)*t
         end
-        local humanoid = self.Humanoid
-        local function updateMovement( dt )
-            if UserInputService:GetFocusedTextBox() then
-                return
-            end
-            if humanoid then
-                local moveDir = getWalkDirectionWorldSpace()
-                targetMoveVelocity = moveDir
-                moveVelocity = lerp( moveVelocity, targetMoveVelocity, math.clamp(dt * moveAcceleration, 0, 1) )
-                humanoid:Move( moveVelocity )
-            end
-        end	
+         local humanoid = self.Humanoid
+        -- local function updateMovement( dt )
+        --     if UserInputService:GetFocusedTextBox() then
+        --         return
+        --     end
+        --     if humanoid then
+        --         local moveDir = getWalkDirectionWorldSpace()
+        --         targetMoveVelocity = moveDir
+        --         moveVelocity = lerp( moveVelocity, targetMoveVelocity, math.clamp(dt * moveAcceleration, 0, 1) )
+        --         humanoid:Move( moveVelocity )
+        --     end
+        -- end	
 
-        cleaner:Connect(RunService.RenderStepped, updateMovement)
+        -- cleaner:Connect(RunService.RenderStepped, updateMovement)
 
         local tiltEnabled = true
 
+        local character: Model = self.Character
+        local root = character.HumanoidRootPart
 
         local lowerTorso = character.LowerTorso
         local root6D : Motor6D = lowerTorso.Root

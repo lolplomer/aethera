@@ -3,6 +3,11 @@
 registry = "test"
 
 [[package]]
+name = "chriscerie/react-spring"
+version = "2.0.0"
+dependencies = [["Promise", "evaera/promise@4.0.0"], ["React", "jsdotlua/react@17.1.0"], ["ReactRoblox", "jsdotlua/react-roblox@17.1.0"], ["TestEZ", "roblox/testez@0.4.1"]]
+
+[[package]]
 name = "evaera/promise"
 version = "4.0.0"
 dependencies = []
@@ -25,7 +30,7 @@ dependencies = []
 [[package]]
 name = "firza/aethera"
 version = "0.1.0"
-dependencies = [["Knit", "sleitnick/knit@1.5.1"], ["Signal", "sleitnick/signal@1.5.0"], ["Symbol", "sleitnick/symbol@2.0.1"], ["TableUtil", "sleitnick/table-util@1.2.0"], ["Trove", "sleitnick/trove@0.5.0"], ["bridgenet2", "ffrostflame/bridgenet2@1.0.0"], ["react", "jsdotlua/react@17.1.0"], ["react-roblox", "jsdotlua/react-roblox@17.1.0"], ["roact-compat", "jsdotlua/roact-compat@17.1.0"]]
+dependencies = [["Knit", "sleitnick/knit@1.5.1"], ["ReactSpring", "chriscerie/react-spring@2.0.0"], ["Signal", "sleitnick/signal@1.5.0"], ["Symbol", "sleitnick/symbol@2.0.1"], ["TableUtil", "sleitnick/table-util@1.2.0"], ["Trove", "sleitnick/trove@0.5.0"], ["bridgenet2", "ffrostflame/bridgenet2@1.0.0"], ["react", "jsdotlua/react@17.1.0"], ["react-roblox", "jsdotlua/react-roblox@17.1.0"]]
 
 [[package]]
 name = "jsdotlua/boolean"
@@ -88,11 +93,6 @@ version = "17.1.0"
 dependencies = [["luau-polyfill", "jsdotlua/luau-polyfill@1.2.6"], ["react", "jsdotlua/react@17.1.0"], ["react-reconciler", "jsdotlua/react-reconciler@17.1.0"], ["scheduler", "jsdotlua/scheduler@17.1.0"], ["shared", "jsdotlua/shared@17.1.0"]]
 
 [[package]]
-name = "jsdotlua/roact-compat"
-version = "17.1.0"
-dependencies = [["luau-polyfill", "jsdotlua/luau-polyfill@1.2.6"], ["react", "jsdotlua/react@17.1.0"], ["react-roblox", "jsdotlua/react-roblox@17.1.0"], ["shared", "jsdotlua/shared@17.1.0"]]
-
-[[package]]
 name = "jsdotlua/scheduler"
 version = "17.1.0"
 dependencies = [["luau-polyfill", "jsdotlua/luau-polyfill@1.2.6"], ["shared", "jsdotlua/shared@17.1.0"]]
@@ -120,6 +120,11 @@ dependencies = [["collections", "jsdotlua/collections@1.2.6"]]
 [[package]]
 name = "pysephwasntavailable/remotepacketsizecounter"
 version = "2.4.1"
+dependencies = []
+
+[[package]]
+name = "roblox/testez"
+version = "0.4.1"
 dependencies = []
 
 [[package]]

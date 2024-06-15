@@ -5,7 +5,7 @@ local ModuleClass = {
     Passives = Passives,
 
     DefaultPassives = {
-       -- MPRegeneration = {Level = 1}
+       MPRegeneration = {Level = 1}
     }
 
 }

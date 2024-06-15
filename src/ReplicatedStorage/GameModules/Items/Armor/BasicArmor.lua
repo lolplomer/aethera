@@ -8,7 +8,7 @@ local item = {
     Icon = {},
     Equipment = {
         Stats = {
-            ATK = {10},
+            DEF = {0.3,true},
             HP = {10} 
         },
         Type = "Body",

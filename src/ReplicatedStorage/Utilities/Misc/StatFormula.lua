@@ -22,8 +22,12 @@ function Formula.GetBaseStat(Level, BaseValue, Multiplier)
   -- return BaseValue + (Level - 1) * Multiplier
 end
 
-function Formula.ApplyModifier(Stat, Multiplier, Flat)
-    return math.max(Stat + Formula.GetModifierValue(Stat, Multiplier, Flat),0)
+function Formula.ApplyModifier(BaseStat, Multiplier, Flat)
+    return math.max(BaseStat + Formula.GetModifierValue(BaseStat, Multiplier, Flat),0)
+end
+
+function Formula.GetBaseDamage(ATK, DEF)
+    return (ATK ^ 2) / (ATK + DEF)
 end
 
 function Formula.GetModifierValue(Stat, Multiplier, Flat)

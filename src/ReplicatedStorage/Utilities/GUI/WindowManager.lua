@@ -32,9 +32,9 @@ local CoreGuiInfo = nil
 local function RevertCoreGui()
     if CoreGuiInfo then
         for name in coreGuis do
-            game.StarterGui:SetCoreGuiEnabled(name, CoreGuiInfo[name] or true)
+            game.StarterGui:SetCoreGuiEnabled(name, CoreGuiInfo[name])
         end
-        CoreGuiInfo = nil
+        CoreGuiInfo = nil 
     end
 
 end

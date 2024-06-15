@@ -23,6 +23,8 @@ GUIUtil.ImplementAnimatedOpenClose (HUD, {
     CloseSizeScale = 1,
 })
 
+HUD.IgnoreGuiInset = false
+
 
 function HUD:init()
     self.MinimapFrame = roact.createRef()

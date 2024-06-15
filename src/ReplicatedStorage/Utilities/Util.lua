@@ -60,6 +60,14 @@ function Util.CharacterAdded(player, Function)
     return player.CharacterAdded:Connect(OnCharacterAdded)
 end
 
+function Util.new(name, props)
+    local instance = Instance.new(name)
+    for prop, value in props do
+        instance[prop] = value
+    end
+    return instance
+end
+
 function Util.ReadItemStats(itemStats, lvl)
     
     local StatFormula = require(script.Parent.Misc.StatFormula)
@@ -69,7 +77,7 @@ function Util.ReadItemStats(itemStats, lvl)
 
     local Stats = {}
     for stat, itemStat in itemStats do
-        local Mult = StatModule[stat].LevelMultiplier
+        local Mult = itemStat[3] or StatModule[stat].LevelMultiplier
         local Value = StatFormula.GetBaseStat(lvl, itemStat[1], Mult)
         if itemStat[2] then
             Stats[stat] = {

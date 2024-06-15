@@ -241,7 +241,7 @@ function HUD:HPChanged()
 
    local HPBar = self.HP:getValue()
    GUI.Tween(HPBar.Bar, {Size = scale(health/maxhealth,1)})
-   HPBar.Label.Text = `HP: {health}/{maxhealth}`
+   HPBar.Label.Text = `HP: {math.floor(health)}/{maxhealth}`
 end
 
 function HUD:didMount()

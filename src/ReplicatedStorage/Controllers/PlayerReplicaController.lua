@@ -20,14 +20,21 @@ function PlayerReplicaController:KnitInit()
     
 end
 
-function PlayerReplicaController:GetReplica(class)
-   return util.GetAsync(Replicas, class, "Client Replica")
+function PlayerReplicaController:GetReplica(class, player)
+    player = player or Player
+    local dir = util.GetAsync(Replicas, class, "Client Replica")
+   return util.GetAsync(dir, player, 'Player Replica')
 end
 
 ReplicaController.NewReplicaSignal:Connect(function(replica)
     --print('new replica:',replica.Class, replica.Tags.Player)
-    if replica.Tags.Player == Player then
-        Replicas[replica.Class] = setmetatable({
+
+    if not Replicas[replica.Class] then
+        Replicas[replica.Class] = {}
+    end
+
+    if replica.Tags.Player then
+        Replicas[replica.Class][replica.Tags.Player] =  setmetatable({
             Replica = replica
         }, replicaClass)
     end

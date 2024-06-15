@@ -160,9 +160,7 @@ function StatsModifier:SetModifier(id: string, modifier: {[string]: {Multiplier:
     self:SumModifiers()
     local _,_,_,ChangedStats = self:CalculateFullStats()
 
-    for stat, value in ChangedStats do
-        self.Changed[stat]:Fire(value)
-    end
+
 end
 
 function StatsModifier:SetModifiers(modifiers)
@@ -182,9 +180,9 @@ function StatsModifier:RemoveModifier(id)
         self:SumModifiers() 
         self:CalculateFullStats()
 
-        for stat, _ in modifier do
-            self.Changed[stat]:Fire(self:Get(stat))
-        end
+        -- for stat, _ in modifier do
+        --     self.Changed[stat]:Fire(self:Get(stat))
+        -- end
     end
 end 
 
@@ -193,7 +191,7 @@ function StatsModifier:IsPlayer()
 end
 
 function StatsModifier:CalculateBaseStats()
-
+    
     local Level, RawStats
     if self:IsPlayer() then
         local PlayerStats = self.PlayerData.Stats
@@ -248,7 +246,10 @@ function StatsModifier:CalculateFullStats()
     if self.Replica then
         self.Replica:Write('SetStats', Level, BaseStats, FullStats)
     end
-
+    for stat, value in ChangedStats do
+        self.Changed[stat]:Fire(value)
+    end
+    
     return FullStats, BaseStats, Level, ChangedStats
 end
 
