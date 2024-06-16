@@ -23,12 +23,13 @@ local States = require(CombatFolder.States)
 local StateChanged = BridgeNet2.ReferenceBridge('StateChanged')
 local Util = require(ReplicatedStorage.Utilities.Util)
 
-
+local packet = require(ReplicatedStorage.Packets.Combat)
 
 local Default = {
     NormalAttackHitbox = 7
 }
 
+local minimumDistance = 9
 
 
 local function DefaultDamageEffect(humanoid: Humanoid, damage: number)
@@ -136,7 +137,43 @@ function CombatService:KnitInit()
        -- print('next')
     end)
 
-    
+    packet.NormalAttack.listen(function(target: Model, attacker: Player)
+        local root = target.HumanoidRootPart
+
+        print('packet received',target,attacker)
+        
+        local char = attacker.Character
+        local player = game.Players:GetPlayerFromCharacter(target)
+        local attackerStats = StatService:GetStats(attacker)
+
+        local targetStats
+
+        if player then
+            if (char.HumanoidRootPart.Position - root.Position).Magnitude < minimumDistance then
+                targetStats = StatService:GetStats(player)
+            end    
+        else
+            local MobService = Knit.GetService('MobService')
+            local mob = MobService:GetMobData(target)
+            if mob and mob:Distance(char.HumanoidRootPart.Position) < minimumDistance then
+                targetStats = mob.Stats
+            end
+        end
+
+        print(targetStats)
+
+        if targetStats and attackerStats then
+            local damage = CombatService:CalculateDamage(targetStats, attackerStats)
+            target.Humanoid:TakeDamage(damage)
+        end
+    end)
+end
+
+function CombatService:CalculateDamage(targetStats, attackerStats)
+    local AttackerATK = attackerStats.Data.FullStats.ATK
+    local TargetDEF = targetStats.Data.FullStats.DEF
+
+    return StatFormula.GetBaseDamage(AttackerATK, TargetDEF)
 end
 
 function CombatService:DamageWithinBox(data : {CFrame: CFrame, Size: Vector3, OverlapParams: OverlapParams?, StatModifier: {}, DamageModifier: () -> nil?, Effect: () -> nil?})

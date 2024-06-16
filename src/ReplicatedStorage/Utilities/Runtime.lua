@@ -7,6 +7,8 @@ Runtime.__index = Runtime
 local Trove = require(ReplicatedStorage.Packages.Trove)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
+local DebugMode = false
+
 function Runtime.new()
     local self = setmetatable({
         TimePosition = 0,
@@ -19,12 +21,12 @@ function Runtime.new()
 
     self.Changed = self.Trove:Construct(Signal)
     self.Completed = self.Trove:Construct(Signal)
-
+    
     return self
 end
 
-function Runtime.newKeyframe(TimePosition, Value)
-    return {TimePosition, Value}
+function Runtime.newKeyframe(TimePosition, Value, Name)
+    return {TimePosition, Value, Name}
 end
 
 function Runtime:AddKeyframe(TimePosition, Value)
@@ -42,6 +44,33 @@ function Runtime:ReplaceKeyframes(keyframes)
     self.Keyframes = keyframes
     self:Recalibrate()
     self.Duration = self.Keyframes[#self.Keyframes][1]
+
+    if typeof(keyframes[1][2]) == "Vector3" and DebugMode then
+        local util = require(ReplicatedStorage.Utilities.Util)
+
+        if self.Debug then
+            self.Debug:Destroy()
+        end
+
+        self.Debug = Trove.new()
+
+        for _,v in keyframes do
+            self.Debug:Add(util.new('Part', {
+                Size = Vector3.one,
+                Position = v[2],
+                Parent = workspace,
+                Color = Color3.new(0,1,0),
+                Anchored = true,
+                Material = 'Neon',
+                Transparency = 0.6,
+                CanQuery = false,
+                CanTouch = false,
+                CanCollide = false
+            }))
+        end
+    end
+    
+    
 end
 
 function Runtime:Recalibrate()
@@ -54,14 +83,37 @@ end
 function Runtime:Play()
     if self.IsPlaying and not self.IsPaused then return end
     self:Recalibrate()
-    self.IsPlaying = true
-    self.IsPaused = false
 
-    task.spawn(function()
-        while self.IsPlaying and not self.IsPaused do
-            self:SetTimePosition(self.TimePosition + task.wait())
-        end
+    self.IsPaused = false
+    if self.IsPlaying then return end
+
+    self.IsPlaying = true
+
+
+    --warn('--- Playing ---')
+
+    if self.PlayingState then
+        self.PlayingState:Clean()
+    end
+
+    self.PlayingState = self.Trove:Extend()
+
+    self.PlayingState:Add(function()
+        self.PlayingState = nil    
     end)
+
+    self.PlayingState:Connect(RunService.Heartbeat, function(dt)
+        if not self.IsPaused then
+            self:SetTimePosition(self.TimePosition + dt)    
+        end
+        
+    end)
+
+    -- task.spawn(function()
+    --     while self.IsPlaying and not self.IsPaused do
+    --         self:SetTimePosition(self.TimePosition + task.wait())
+    --     end
+    -- end)
 end
 
 function Runtime:Pause()
@@ -73,6 +125,10 @@ function Runtime:Stop()
     self.IsPlaying = false
     self.IsPaused = false
     self.TimePosition = 0
+
+    if self.PlayingState then
+        self.PlayingState:Clean()
+    end
     --self.Trove:Clean()
 end
 
@@ -91,22 +147,23 @@ function Runtime:Interpolate(timePosition)
     end
 
     if not before then
-        return self.Keyframes[1][2] -- Return the first keyframe value if timePosition is before the first keyframe
+        return self.Keyframes[1][2], self.Keyframes[1][2] -- Return the first keyframe value if timePosition is before the first keyframe
     end
 
     if not after then
-        return self.Keyframes[#self.Keyframes][2] -- Return the last keyframe value if timePosition is after the last keyframe
+        return self.Keyframes[#self.Keyframes][2], self.Keyframes[#self.Keyframes][2]  -- Return the last keyframe value if timePosition is after the last keyframe
     end
 
     local alpha = (timePosition - before[1]) / (after[1] - before[1])
-    return before[2] + alpha * (after[2] - before[2]), after[2]
+    --print(alpha)
+    return before[2] + alpha * (after[2] - before[2]), after[2], before[3]
 end
 
 
 function Runtime:SetTimePosition(newTimePosition)
     self.TimePosition = math.clamp(newTimePosition, 0, self.Duration)
-    local value, point = self:Interpolate(self.TimePosition)
-    self.Changed:Fire(value, point)
+    local value, point, name = self:Interpolate(self.TimePosition)
+    self.Changed:Fire(value, point, name)
     if self.TimePosition >= self.Duration and self.IsPlaying then
         self:Stop()
         self.Completed:Fire()

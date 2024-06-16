@@ -11,6 +11,9 @@
             "Controllers": {
                 "$path": "src/ReplicatedStorage/Controllers"
             },
+            "Packets": {
+                "$path": "src/ReplicatedStorage/Packets"
+            },
             "GameModules": {
                 "$path": "src/ReplicatedStorage/GameModules"
             },
@@ -19,9 +22,6 @@
             },
             "Madwork": {
                 "$path": "src/ReplicatedStorage/Madwork"
-            },
-            "BridgeNet": {
-                "$path": "src/ReplicatedStorage/BridgeNet"
             }
         },
 

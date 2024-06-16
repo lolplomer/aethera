@@ -5,6 +5,7 @@ local Knit = require(ReplicatedStorage.Packages.Knit)
 
 Knit.AddServices(game.ServerStorage.Services)
 
+--game.Players.CharacterAutoLoads = false
 
 if not RunService:IsStudio() then
     do

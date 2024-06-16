@@ -95,7 +95,8 @@ States.Attack = {
 
                 task.delay(0.2, function()
                     if not cancelled then
-                        Knit.GetService('CombatService'):NormalAttack()
+                        Knit.GetController('CharacterController'):CastNormalAttack()
+                        --Knit.GetService('CombatService'):NormalAttack()
                     end
                 end)
 

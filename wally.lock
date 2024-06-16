@@ -18,6 +18,11 @@ version = "1.0.0"
 dependencies = [["RemotePacketSizeCounter", "pysephwasntavailable/remotepacketsizecounter@2.4.1"], ["TableKit", "ffrostflame/tablekit@0.2.4"], ["wallyInstanceManager", "ffrostflame/wally-instance-manager@0.1.0"]]
 
 [[package]]
+name = "ffrostflame/bytenet"
+version = "0.4.5"
+dependencies = []
+
+[[package]]
 name = "ffrostflame/tablekit"
 version = "0.2.4"
 dependencies = []
@@ -30,7 +35,7 @@ dependencies = []
 [[package]]
 name = "firza/aethera"
 version = "0.1.0"
-dependencies = [["Knit", "sleitnick/knit@1.5.1"], ["ReactSpring", "chriscerie/react-spring@2.0.0"], ["Signal", "sleitnick/signal@1.5.0"], ["Symbol", "sleitnick/symbol@2.0.1"], ["TableUtil", "sleitnick/table-util@1.2.0"], ["Trove", "sleitnick/trove@0.5.0"], ["bridgenet2", "ffrostflame/bridgenet2@1.0.0"], ["react", "jsdotlua/react@17.1.0"], ["react-roblox", "jsdotlua/react-roblox@17.1.0"]]
+dependencies = [["Knit", "sleitnick/knit@1.5.1"], ["ReactSpring", "chriscerie/react-spring@2.0.0"], ["Signal", "sleitnick/signal@1.5.0"], ["Streamable", "sleitnick/streamable@1.2.4"], ["Symbol", "sleitnick/symbol@2.0.1"], ["TableUtil", "sleitnick/table-util@1.2.0"], ["Trove", "sleitnick/trove@0.5.0"], ["bridgenet2", "ffrostflame/bridgenet2@1.0.0"], ["bytenet", "ffrostflame/bytenet@0.4.5"], ["react", "jsdotlua/react@17.1.0"], ["react-roblox", "jsdotlua/react-roblox@17.1.0"]]
 
 [[package]]
 name = "jsdotlua/boolean"
@@ -148,6 +153,11 @@ version = "1.5.0"
 dependencies = []
 
 [[package]]
+name = "sleitnick/streamable"
+version = "1.2.4"
+dependencies = [["Signal", "sleitnick/signal@1.5.0"], ["Trove", "sleitnick/trove@0.4.2"]]
+
+[[package]]
 name = "sleitnick/symbol"
 version = "2.0.1"
 dependencies = []
@@ -155,6 +165,11 @@ dependencies = []
 [[package]]
 name = "sleitnick/table-util"
 version = "1.2.0"
+dependencies = []
+
+[[package]]
+name = "sleitnick/trove"
+version = "0.4.2"
 dependencies = []
 
 [[package]]
