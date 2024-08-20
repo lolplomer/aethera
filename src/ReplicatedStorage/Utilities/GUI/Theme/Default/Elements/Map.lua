@@ -62,7 +62,6 @@ function map:UpdatePlayerPosition(PlayerMarkers, dt, initScale)
     --    -- print(t,1-((self.animateTime+1-os.clock())/tweenInfo.Time), self.animateTime - os.clock())    
     -- end
     
-
     local scale = initScale or self.props.Scale or 1
     local init = mapSettings.InitialPosition*scale
     for _,player in PlayerMarkers:GetChildren() do
@@ -86,7 +85,9 @@ end
 function map:UpdateMarkerPosition(Markers, dt, initScale, onlySelectionMarker)
     
    -- print('select position', self.props.SelectPosition)
-   local DataReplica = PlayerDataController:GetPlayerData().Replica
+   if not PlayerDataController.PlayerData then return end
+
+   local DataReplica = PlayerDataController.PlayerData.Replica
 
     local SelectionMarker = Markers._SELECTION
     local scale = initScale or self.props.Scale or 1
@@ -143,13 +144,16 @@ function map:Initiate(initScale)
         self:UpdateMarkerPosition(Markers, dt)
     end)
 
-    local DataReplica = PlayerDataController:GetPlayerData().Replica
+    task.defer(function()
+        local DataReplica = PlayerDataController:GetPlayerData().Replica
 
-    self.Cleaner:Add(DataReplica:ListenToRaw(function(_,path)
-        if path[1]=='Map' and path[2]=='Markers' then
-            self:setState {update = self.state.update + 1}
-        end
-    end))
+        self.Cleaner:Add(DataReplica:ListenToRaw(function(_,path)
+            if path[1]=='Map' and path[2]=='Markers' then
+                self:setState {update = self.state.update + 1}
+            end
+        end))
+    end)
+
 end
 
 function map:WorldToMapPosition(worldPos:Vector3)
@@ -284,15 +288,19 @@ function map:render()
     Markers._SELECTION = CreateMarker {
         Icon = mapSettings.Markers.Marker.Icon,
     }
-    local DataReplica = PlayerDataController:GetPlayerData().Replica
-    for i, data in DataReplica.Data.Map.Markers do
-        Markers[i] = CreateMarker {
-            Icon = mapSettings.Markers.Marker.Icon,
-            Position = self.props.Disabled and self:WorldToMapPosition(Vector3.new(
-                data[1][1],0,data[1][3]
-            )),
-        }
+    
+    if PlayerDataController.PlayerData then
+        local DataReplica = PlayerDataController.PlayerData.Replica
+        for i, data in DataReplica.Data.Map.Markers do
+            Markers[i] = CreateMarker {
+                Icon = mapSettings.Markers.Marker.Icon,
+                Position = self.props.Disabled and self:WorldToMapPosition(Vector3.new(
+                    data[1][1],0,data[1][3]
+                )),
+            }
+        end
     end
+
 
     return roact.createElement('Frame', {
         Size = UDim2.fromScale(0,0),

@@ -3,7 +3,7 @@
 local ReplicatedStorage = game.ReplicatedStorage
 local knit = require(ReplicatedStorage:WaitForChild"Packages":WaitForChild"Knit")
 local GUI = knit.GetController"GUI"
-local CharacterController = knit.GetController"CharacterController"
+--local CharacterController = knit.GetController"CharacterController"
 
 local roact = require(ReplicatedStorage:WaitForChild"Utilities":WaitForChild"Roact")
 
@@ -93,7 +93,7 @@ function windowManager:SwitchWindow(WindowName, BypassDebounce)
         current._component:setState {selected = false}
 
         if not pendingWindow then
-            GUI:EnableAll()
+            GUI:EnableAll(true)
             RevertCoreGui()
             --SetCoreGuiEnabled(true)
             IconManager.Controller.setTopbarEnabled(true)
@@ -131,7 +131,7 @@ function windowManager:SwitchWindow(WindowName, BypassDebounce)
     
     selectedWindow = window
     
-    CharacterController:ChangeState(selectedWindow and 'Busy')
+    --CharacterController:ChangeState(selectedWindow and 'Busy')
 end
 
 function windowManager.new(WindowName, props)
@@ -215,7 +215,9 @@ function windowManager.new(WindowName, props)
             BackgroundColor3 = Color3.fromRGB(0,0,0),
             BackgroundTransparency = 0.6,
             AnchorPoint = Vector2.new(0.5,0.5),
-            Position = UDim2.fromScale(0.5,0.5)
+            Position = UDim2.fromScale(0.5,0.5),
+            GroupTransparency = 1,
+            Visible = false
         }, {
             CloseButton = GUI.newElement("CloseButton", {
                 Size = UDim2.fromScale(0.07,0.07),
@@ -244,9 +246,10 @@ function windowManager.new(WindowName, props)
         
         
         GUI.newElement("Frame", {
-            Visible = true,
+            Visible = false,
             ["ref"] = self.MainFrame,
             Size = self.Size,
+            GroupTransparency = 1,
             
         }, {
             Topbar = GUI.newElement("FrameTopbar", {
@@ -289,7 +292,7 @@ function windowManager.new(WindowName, props)
     function component:componentDidMount(...)
         --print(WindowName,'FrameRef:',self.MainFrame)
         local InputController = knit.GetController("InputController")
-        self:close()    
+        --self:close()    
 
         local icon = IconManager(WindowName)
         :setOrder(5)
@@ -317,9 +320,19 @@ function windowManager.new(WindowName, props)
         -- end)
         :autoDeselect(false)
 
+        if props.Handle then
+            props.Handle:GetPropertyChangedSignal('Enabled'):Connect(function()
+                if not props.DisableIcon then
+                    icon:setEnabled(props.Handle.Enabled)
+                end
+            end)
+        end
+
         if props.Keybind then
 
             InputController:OnKeybindTrigger(props.Keybind, function()
+                if self.props.Disabled then return end
+                
                 if self.state.selected then
                     windowManager:SwitchWindow()
                     --icon:deselect()
@@ -337,6 +350,13 @@ function windowManager.new(WindowName, props)
 
         if window.didMount then
             window:didMount(...)
+        end
+
+        if self.props.Disabled then
+            local mainFrame = self.MainFrame:getValue()
+            
+            mainFrame.GroupTransparency = 1
+            mainFrame.Visible = false
         end
     end
 

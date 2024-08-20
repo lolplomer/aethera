@@ -13,6 +13,7 @@ local player = game.Players.LocalPlayer
 function PlayerDataController:GetPlayerData()
     if not PlayerDataReplica then
         --warn(`PlayerData has yet to be acquired and will yield the thread`)
+        print('source:',debug.traceback())
         while not PlayerDataReplica do
             task.wait()
         end
@@ -27,7 +28,11 @@ function PlayerDataController:KnitInit()
             PlayerDataReplica = setmetatable({
                 Replica = replica
             }, PlayerDataClass)
-            print(`Acquired a replica of {player}'s PlayerData:`,replica)
+            PlayerDataController.PlayerData = PlayerDataReplica
+            warn(`[PlayerDataController] Acquired a replica of {player}'s PlayerData:`,replica)
+
+            local LoadingService = Knit.GetService('LoadingService')
+            LoadingService.LoadingDone:Fire()
         end
     end)
 end

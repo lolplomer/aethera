@@ -1,3 +1,4 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local packages = game.ReplicatedStorage:WaitForChild"Packages"
 local knit = require(packages:WaitForChild("Knit"))
@@ -19,10 +20,12 @@ controller.Theme = "Default"
 local Elements = nil
 local Interfaces = {}
 local Popups = {}
+local Groups = {}
 
-local interfaceModules = GUIUtilities:WaitForChild"Interfaces"
+local interfaceModules = ReplicatedStorage.GameModules.Interfaces
 local misc = game.ReplicatedStorage.Utilities:WaitForChild"Misc"
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TWS = game:GetService"TweenService"
 local TweenConfig = TweenInfo.new(0.25)
 
@@ -30,6 +33,8 @@ controller.Popup = require(GUIUtilities:WaitForChild"Popup")
 controller.Color = require(misc:WaitForChild"ColorUtil")
 controller.UIPropertyChanged = signal.new()
 controller.DisableScroll = false
+
+local modules = {}
 
 local function createHandle(name)
     
@@ -42,6 +47,8 @@ local function createHandle(name)
 
     return handle
 end
+
+controller.CreateHandle = createHandle
 
 function controller.Tween(object, goal, customTweenConfig)
     TWS:Create(object, customTweenConfig or TweenConfig, goal):Play()
@@ -60,7 +67,8 @@ function controller:UpdateUI(name, props)
     assert(Interfaces[name], `Interface named {name} doesn't exist`)
     local tree = Interfaces[name].tree
     
-    local component = react.createElement(require(interfaceModules[name]), props)
+    local interface = require(modules[name])
+    local component = react.createElement(interface.Component or interface, props)
     tree:render(component)
  --   warn("updating", name)
     Interfaces[name].props = props
@@ -89,21 +97,29 @@ function controller:GetProps(InterfaceName)
 end
 
 function controller:DisableUI(InterfaceName)
-    if Interfaces[InterfaceName].props.Disabled == true then return end
-   self:UpdateUI(InterfaceName, {Disabled = true})
+    --if Interfaces[InterfaceName].props.Disabled == true then return end
+   --self:UpdateUI(InterfaceName, {Disabled = true})
+   Interfaces[InterfaceName].handle.Enabled = false
 end
 
 function controller:EnableUI(InterfaceName)
    --  if Interfaces[InterfaceName].props.Disabled == false then return end
   -- print ('Enabling '.. InterfaceName) 
-    self:UpdateUI(InterfaceName, {Disabled = false})
+    --self:UpdateUI(InterfaceName, {Disabled = false})
+    Interfaces[InterfaceName].handle.Enabled = true
 end
 
-function controller:DisableAllExcept(ExceptionInterfaceNames: {string}, DoNothing)
-    for name, _ in Interfaces do
+function controller:DisableAllExcept(ExceptionInterfaceNames: {string})
+    for name, data in Interfaces do
         if not table.find(ExceptionInterfaceNames, name) then
           --  print("--- Disabling", name)
-            self:DisableUI(name)
+            if not data.props.Disabled then
+
+                data.previousDisabledProp = false
+
+                self:DisableUI(name)    
+            end
+            
         else
        --     print("--- --- Enabling", name)
             self:EnableUI(name)
@@ -111,13 +127,24 @@ function controller:DisableAllExcept(ExceptionInterfaceNames: {string}, DoNothin
     end
 end
 
-function controller:CreatePopup(element, id, props, DeselectedCallback)
+function controller:AddToGroup(interfaceName, group)
+    if not Groups[group] then
+        Groups[group] = {}
+    end
+
+    table.insert(Groups[group],interfaceName)
+
+    
+end
+
+function controller:CreatePopup(id, element, props, DeselectedCallback)
     --self:ClosePopup(id)
     props = props or {}
 
-    props.DeselectedCallback = DeselectedCallback or function()
+    props.DeselectedCallback =  props.DeselectedCallback or DeselectedCallback or function()
         self:ClosePopup(id)
     end
+    props.Id = id
     local layout = self.Popup.CreateLayout(element, props)
 
     if Popups[id] then
@@ -147,11 +174,21 @@ function controller:ClosePopup(id)
     Popups[id] = nil
 end
 
-function controller:EnableAll()
-    for name, _ in Interfaces do
-      --  print("(ALL) --- --- Enabling", name)
-        self:EnableUI(name)
+function controller:EnableAll(fromPreviousDisabledProp)
+    if fromPreviousDisabledProp then
+        for name, data in Interfaces do
+            --  print("(ALL) --- --- Enabling", name)
+          if data.previousDisabledProp ~= nil then
+                self:EnableUI(name)
+           end
+            data.previousDisabledProp = nil
+        end
+    else
+        for name in Interfaces do
+            self:EnableUI(name)
+        end
     end
+   
 end
 
 function controller:KnitInit()
@@ -164,6 +201,67 @@ function controller:KnitInit()
         end, false, Enum.UserInputType.MouseWheel)
 end
 
+function controller:EnableGroup(group)
+    if Groups[group] then
+        controller:DisableAllExcept(Groups[group])
+    end
+end
+
+function controller:DisableGroup(group)
+    if Groups[group] then
+        for _, interfaceName in Groups[group] do
+            controller:DisableUI(interfaceName)
+        end
+    end
+end
+
+local function initiate(interface, interfaceModule)
+    local handle
+    if interface.Handle then
+        handle = interface.Handle(interfaceModule.Name)
+    else
+        handle = createHandle(interfaceModule.Name)
+    end
+    if interface.Disabled then
+        handle.Enabled = false
+    end
+
+    local root = react_roblox.createRoot(handle)
+
+
+    Interfaces[interfaceModule.Name] = {
+        tree = root,
+        props = {Handle = handle},--{Disabled = interface.Disabled == nil and true or interface.Disabled},
+        handle = handle
+    }
+
+    root:render(react.createElement(interface.Component or interface, Interfaces[interfaceModule.Name].props))
+
+
+    if interface.HUD then
+        controller:AddToGroup(interfaceModule.Name, 'HUD')
+    end
+
+end
+
+function controller:LoadInterface(interfaceModule: ModuleScript)
+    modules[interfaceModule.Name] = interfaceModule
+    local interface = require(interfaceModule)
+            
+    interface.Name = interfaceModule.Name
+    
+    xpcall(initiate, warn, interface, interfaceModule)
+end
+
+function controller:LoadFolder(folder: Folder)
+    for _,v in folder:GetChildren() do
+        if v:IsA'ModuleScript' then
+           
+            self:LoadInterface(v)
+        end
+    end
+end
+
 function controller:KnitStart()
 
     -- roact_old.setGlobalConfig({
@@ -173,7 +271,8 @@ function controller:KnitStart()
     local DisabledCoreGuis = {
         Enum.CoreGuiType.Backpack,
         Enum.CoreGuiType.PlayerList,
-        Enum.CoreGuiType.EmotesMenu
+        Enum.CoreGuiType.EmotesMenu,
+        Enum.CoreGuiType.Health
     }
 
     for _,v in DisabledCoreGuis do
@@ -187,31 +286,13 @@ function controller:KnitStart()
 
 
     local Nametag = require(script.Nametags)
+    require(script.ProximityPrompt)
+
     Nametag.Init()
 
-
-    for _, interfaceModule in interfaceModules:GetChildren() do
-        local interface = require(interfaceModule)
-        interface.Name = interfaceModule.Name
-        if interface.Disabled then continue end
-        task.spawn(function()
-
-            local root = react_roblox.createRoot(createHandle(interface.Name))
-            
-            root:render(react.createElement(interface))
-        --    print('rendered',interface.Name)
-            Interfaces[interfaceModule.Name] = {
-                tree = root,
-                props = {Disabled = false}
-            }
-
-            -- local component = roact.createElement(interface)
-            -- Interfaces[interfaceModule.Name] = {
-            --     tree = roact.mount(component, player.PlayerGui, interfaceModule.Name),
-            --     props = {Disabled = false}
-            -- }
-        end)
-    end
+ 
+    self:LoadFolder(interfaceModules)
+    self:LoadFolder(ReplicatedStorage.PlaceShared.Interfaces)
 end
 
 return controller

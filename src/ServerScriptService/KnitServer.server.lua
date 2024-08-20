@@ -1,17 +1,39 @@
 local ReplicatedStorage = game:GetService"ReplicatedStorage"
 local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local Knit = require(ReplicatedStorage.Packages.Knit)
 
-Knit.AddServices(game.ServerStorage.Services)
+require(ReplicatedStorage.Packages.bridgenet2)
 
---game.Players.CharacterAutoLoads = false
+game.Players.CharacterAutoLoads = false
 
-if not RunService:IsStudio() then
+local ClonePlayerModule = ReplicatedStorage.Assets.PlayerModule
+local PlayerModule = game.StarterPlayer.StarterPlayerScripts:WaitForChild('PlayerModule')
+
+local function fetch(names)
+    local services = {}
+    for _, v in names do
+        services[v] = ServerStorage:FindFirstChild(v)
+    end
+    return services
+end
+
+for _, v in ClonePlayerModule:GetChildren() do
+    local new = v:Clone()
+    local old = PlayerModule:FindFirstChild(v.Name)
+    if old then
+        old:Destroy()
+    end
+    new.Parent = PlayerModule
+end
+
+if RunService:IsStudio() then
     do
         local Assets = {
             Assets = 16312860421, 
-            Models = 13706951116
+            Models = 13706951116,
+            Items = 18159715585
         }
         local InsertService = game:GetService("InsertService")
     
@@ -28,7 +50,7 @@ if not RunService:IsStudio() then
             local Models = game.ReplicatedStorage:FindFirstChild(name)
             if not Models then
                 Models = Instance.new("Folder")
-                Models.Name = "Models"
+                Models.Name = name
                 Models.Parent = game.ReplicatedStorage
             end
     
@@ -54,6 +76,18 @@ if not RunService:IsStudio() then
 end
 
 
+local services = fetch {'Services', 'PlaceServices'}
+
+for _,v in services do
+    Knit.AddServices(v)
+end
+
 Knit.Start():andThen(function()
     warn("Knit Server has been started")
+
+    local KnitStarted = Instance.new('BoolValue')
+    KnitStarted.Name = 'KnitServerStarted'
+    KnitStarted.Value = true
+    KnitStarted.Parent = ReplicatedStorage
+
 end):catch(warn)

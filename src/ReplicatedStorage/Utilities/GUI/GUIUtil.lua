@@ -16,6 +16,14 @@ function util.CheckDisabledProperty(selfcomponent)
     end
 end
 
+function util.Initiate(self)
+    local mainFrame = self.MainFrame:getValue()
+    if self.props.Disabled then
+        mainFrame.Visible =false
+        mainFrame.GroupTransparency = 1
+    end
+end
+
 function util.ImplementAnimatedOpenClose(component, config)
 
     config.CloseSizeScale = config.CloseSizeScale or 1.1

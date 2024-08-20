@@ -1,5 +1,5 @@
 local UseMockOnStudio = true
-local StoreName = "PlayerDataTEST4"
+local StoreName = "PlayerDataTEST5"
 
 local packages = game.ReplicatedStorage.Packages
 local knit = require(packages.Knit)

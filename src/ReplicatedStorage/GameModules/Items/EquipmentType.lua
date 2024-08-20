@@ -30,13 +30,38 @@ local function AttachModel(Model:Model, Character)
         Model.Parent = Character
     else
         local accessories = Model:GetChildren()
+
+        local affectedBodyParts = {}
         for _,v in accessories do
+            
             v.Parent = Character
+
+            if v.Name == 'HideBodyParts' then
+                for _, name in require(v) do
+                    local bp = Character:FindFirstChild(name)
+                    if bp then
+                        bp.Transparency = 1
+                        table.insert(affectedBodyParts, bp)
+                    end
+                end
+            end
+
+            for _, a in v:GetDescendants() do
+                if a:IsA('BasePart') then
+                    a.CanCollide = false
+                    a.CanQuery = false
+                    a.CanTouch = false
+                end
+            end
         end
         Model.Parent = Character
         OnDestroy(Model, function()
             for _,v in accessories do
                 v:Destroy()
+            end
+
+            for _,v in affectedBodyParts do
+                v.Transparency = 0
             end
         end)
     end
@@ -87,7 +112,7 @@ local function addAccoutrement(character, accoutrement)
             if characterAttachment then
                -- print('Attachment',accoutrement,character,characterAttachment)
                 handle.CFrame = characterAttachment.WorldCFrame * accoutrementAttachment.CFrame:inverse()
-                --weldAttachments(characterAttachment, accoutrementAttachment)
+                weldAttachments(characterAttachment, accoutrementAttachment)
             end
         else
             local head = character:FindFirstChild("Head")
@@ -127,7 +152,6 @@ local Type = {
         ApplyInstanceViewport = function(Model, Character)
             for _,v in Model:GetChildren() do
                 if v:IsA"Accessory" then
-                    print('applying',v)
                     addAccoutrement(Character, v)
                 end
             end
@@ -148,7 +172,7 @@ local Type = {
         ApplyInstanceViewport = function(Model, Character)
             for _,v in Model:GetChildren() do
                 if v:IsA"Accessory" then
-                    print('applying',v)
+                  --  print('applying',v)
                     addAccoutrement(Character, v)
                 end
             end

@@ -123,9 +123,9 @@ end)
         local BaseStats = {}
         for stat, value in equipment.Stats do
             local percentage = value[2]
-            local mult = Stats[stat].LevelMultiplier
+            local mult = value[3] or Stats[stat].LevelMultiplier
             local metadata = Stats[stat]
-            local label = math.round(StatFormula.GetBaseStat(data.Lvl, value[1], mult))
+            local label = math.round(StatFormula.GetBaseStat(data.Lvl, value[1], mult) * 100)/100
             if metadata.IsPercentage or percentage then
                 label = StatFormula.Percentage(label)
             end

@@ -1,0 +1,62 @@
+{
+    "name": "world",
+    "tree": {
+        "$className": "DataModel",
+    
+        "ReplicatedStorage": {
+            "$className": "ReplicatedStorage",
+            "Packages": {
+                "$path": "Packages"
+            },
+            "Controllers": {
+                "$path": "src/ReplicatedStorage/Controllers"
+            },
+            "Packets": {
+                "$path": "src/ReplicatedStorage/Packets"
+            },
+            "GameModules": {
+                "$path": "src/ReplicatedStorage/GameModules"
+            },
+            "Utilities": {
+                "$path": "src/ReplicatedStorage/Utilities"
+            },
+            "Madwork": {
+                "$path": "src/ReplicatedStorage/Madwork"
+            },
+
+            "PlaceControllers": {
+                "$path": "Places/World/Controllers"
+            },
+            "PlaceShared": {
+                "$path": "Places/World/Shared"
+            }
+        },
+
+        "ServerScriptService": {
+            "$className": "ServerScriptService",
+            "$path": "src/ServerScriptService"
+        },
+
+        "ServerStorage": {
+            "$className": "ServerStorage",
+
+            "Services": {
+                "$path": "src/ServerStorage/Services"
+            },
+            "PlaceServices": {
+                "$path": "Places/World/Services"
+            },
+            "ReplicaServiceExamples": {
+                "$path": "src/ServerStorage/ReplicaServiceExamples"
+            }
+        },
+
+        "StarterPlayer": {
+            "$className": "StarterPlayer",
+            "StarterPlayerScripts": {
+                "$className": "StarterPlayerScripts",
+                "$path": "src/StarterPlayerScripts"
+            }
+        }
+    }
+}

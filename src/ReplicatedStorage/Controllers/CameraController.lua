@@ -78,9 +78,9 @@ end
 
 
 function CameraController:KnitInit()    
-    util.CharacterAdded(game.Players.LocalPlayer, function(c)
-        character = c
-    end)
+    -- util.CharacterAdded(game.Players.LocalPlayer, function(c)
+    --     character = c
+    -- end)
     
 end
 

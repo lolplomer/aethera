@@ -1,6 +1,6 @@
 local ReplicatedStorage = game.ReplicatedStorage
-local roact = require(ReplicatedStorage:WaitForChild("Utilities"):WaitForChild("Roact"))
-local TextLabel = require(script.Parent:WaitForChild"TextLabel")
+local roact = require(ReplicatedStorage.Utilities.Roact)
+local TextLabel = require(script.Parent.TextLabel)
 
 local Knit = require(ReplicatedStorage.Packages.Knit)
 local GUI = Knit.GetController("GUI")

@@ -12,6 +12,9 @@ local ReplicaService = require(game.ServerScriptService.ReplicaService)
 local ReplicaToken = ReplicaService.NewClassToken("PlayerStats")
 local MobReplicaToken = ReplicaService.NewClassToken("MobStats")
 
+local promise = require(ReplicatedStorage.Utilities.Promise)
+local sleep = promise.promisify(task.wait)
+
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local WriteLib = ReplicatedStorage.Utilities.WriteLibs.Stats
@@ -41,7 +44,8 @@ StatsModifier.__index = function(self, index)
     return StatsModifier[index] or ReplicaClass.__index(self, index)
 end
 
-function StatsModifier.newForMob(Data: {RawStats: {[string] : number},Level:number} )
+function StatsModifier.newForMob(Data: {RawStats: {[string] : number},Level:number}, model )
+ --   print('NewForMob',Data, model)
     local self = setmetatable({
         Data = {
             Modifiers = {},
@@ -49,7 +53,7 @@ function StatsModifier.newForMob(Data: {RawStats: {[string] : number},Level:numb
             FullStats = {},
             Level = Data.Level,
             RawStats = Data.RawStats,
-            Exp = Formula.GetExp(Data.Level)
+            Exp = Formula.GetExp(Data.Level),
         },
         ExpChanged = Signal.new(),
         Changed = CreateSignalForEveryStat()
@@ -66,6 +70,8 @@ function StatsModifier.newForMob(Data: {RawStats: {[string] : number},Level:numb
         ClassToken = MobReplicaToken,
         Data = self.Data,
         WriteLib = WriteLib,
+        Tags = {Mob = model},
+        Replication = 'All'
     })
 
     
@@ -77,11 +83,13 @@ function StatsModifier.newForMob(Data: {RawStats: {[string] : number},Level:numb
     end)
 
     self.ExpChanged:Connect(function(_, NewLevel)
-        print(NewLevel, math.floor(NewLevel), self.Data.Level)
+       --print(NewLevel, math.floor(NewLevel), self.Data.Level)
         if math.floor(NewLevel) ~= self.Data.Level then
             self:CalculateFullStats()
         end
     end)
+
+    --print('Mob Tag:', self.Replica.Tags)
 
     return self
 
@@ -100,6 +108,7 @@ function StatsModifier.new(player)
         },
         ExpChanged = Signal.new(),
         Changed = CreateSignalForEveryStat(),
+        Duration = {}
     }, StatsModifier)
 
 
@@ -122,6 +131,9 @@ function StatsModifier.new(player)
         self.ExpChanged:Destroy()
         for _, signal in self.Changed do
             signal:Destroy()
+        end
+        for id in self.Duration do
+            self:RemoveTimer(id)
         end
     end)
 
@@ -155,15 +167,36 @@ function StatsModifier:SumModifiers()
     return summations
 end
 
-function StatsModifier:SetModifier(id: string, modifier: {[string]: {Multiplier: number, Flat: number}})
+function StatsModifier:RemoveTimer(id)
+    
+    if self.Duration[id] then
+        self.Duration[id]:cancel()
+        self.Duration[id] = nil
+    end
+end
+
+function StatsModifier:SetTimer(id, duration)
+    self.Duration[id] = sleep(duration):andThenCall(self.RemoveModifier, self, id)
+end
+
+function StatsModifier:SetModifier(id: string, modifier: {[string]: {Multiplier: number, Flat: number}}, duration)
+    
+    for _, _modifier in modifier do
+        _modifier.Flat = _modifier.Flat or 0
+        _modifier.Multiplier = _modifier.Multiplier or 0
+    end
+
     self.Replica:Write("SetModifier", id, modifier)
     self:SumModifiers()
     local _,_,_,ChangedStats = self:CalculateFullStats()
 
-
+    if duration then
+        self:SetTimer(id, duration)
+    end
 end
 
 function StatsModifier:SetModifiers(modifiers)
+
     self.Replica:Write("SetModifiers", modifiers)
     self:SumModifiers()
     local _,_,_,ChangedStats = self:CalculateFullStats()
@@ -179,11 +212,12 @@ function StatsModifier:RemoveModifier(id)
         self.Replica:Write("RemoveModifier", id)
         self:SumModifiers() 
         self:CalculateFullStats()
-
         -- for stat, _ in modifier do
         --     self.Changed[stat]:Fire(self:Get(stat))
         -- end
     end
+
+    self:RemoveTimer(id)
 end 
 
 function StatsModifier:IsPlayer()

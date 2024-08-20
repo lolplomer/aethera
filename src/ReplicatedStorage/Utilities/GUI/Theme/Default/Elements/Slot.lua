@@ -27,7 +27,8 @@ local Knit = require(ReplicatedStorage:WaitForChild('Packages'):WaitForChild('Kn
 local GUI = Knit.GetController("GUI")
 
 local BodyShotConfig = {
-    Torso = CFrame.new(0,0.7,-5)
+    Torso = CFrame.new(0,0.6,-5),
+    Legs = CFrame.new(0,-1.2,-5)
 }
 
 function Slot:init()
@@ -106,7 +107,7 @@ function Slot:render()
                 end
                 
                 local baseCF = CFrame.new(modelCF.Position)
-                local baseOffset = CFrame.new(0, 0.25, modelSize.Y * 4)
+                local baseOffset = CFrame.new(0, 0.25, modelSize.Y * 4.3)
                 local categoryOffset = itemCategoryOffsets[item.Category] or zeroCF
                 local customOffset = item.Icon.ViewportOffset or zeroCF
     
@@ -126,6 +127,8 @@ function Slot:render()
        LayoutOrder =  (self.props.LayoutOrder or -rating.Rank) - (props.Equipped and 1000 or 0),
        ["ref"] = self.outerFrameRef,
        Size = self.props.Size or UDim2.fromScale(1,1),
+       Position = self.props.Position,
+       AnchorPoint = self.props.AnchorPoint,
      --  GroupTransparency = self.transparency,
    }, {
        UICorner = roact.createElement(Corner),
@@ -214,15 +217,21 @@ function Slot:updateViewportModel()
     end
 
     if self.UsingViewport then
-        local item = ItemsModule[self.props.ItemData[1]]
+        local item = ItemsModule[self.props.ItemData]
         local previewModel = Models[item.Model]:Clone()
 
         if item.Equipment.Type == 'Body' then
+            local worldModel = Instance.new('WorldModel')
+
             local rig = Models.Rig:Clone()
             local typeInfo = item:GetTypeInfo()
+            
+            rig.Parent = worldModel
+            rig.HumanoidRootPart.Anchored = true
+
+            worldModel.Parent = self.viewportRef:getValue()
             typeInfo.ApplyInstanceViewport(previewModel, rig)
 
-            rig.Parent = self.viewportRef:getValue()
             self.PreviewModel = rig
         else
             previewModel.Parent = self.viewportRef:getValue()

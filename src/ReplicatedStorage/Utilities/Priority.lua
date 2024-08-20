@@ -14,34 +14,55 @@ ValueClass.__tostring = function(self)
     return self:GetValue()
 end
 
+local DISABLED_TWEEN_DATATYPES = {'boolean','Instance'}
+
 local PriorityModule = {}
 
+local function is_empty(t)
+    for _ in t do
+        return false
+    end
+    return true
+end
 
 function HandlerClass:Destroy()
     self.Trove:Destroy()
 end
 
-function HandlerClass:Update(Property, TWINFO)
+function HandlerClass:Update(Property)
     local property = self.Values[Property]
     if property then
         local v = self.DefaultValues[Property]
-        for _, Value in property do
-            v = Value:GetValue()
-            break
-            
-    --        print('New value of',Property,':',Value:GetValue(),'\nAll other values:',property)
-            --return
+        
+        if not is_empty(property) then
+            local i = 1
+            local _v
+            while _v == nil do
+                _v = property[i]
+                i += 1
+            end
+            v = _v:GetValue()
         end
 
+       --print(Property, v)
+    --     for _, Value in property do
+    --         v = Value:GetValue()
+    --         break
+            
+    -- --        print('New value of',Property,':',Value:GetValue(),'\nAll other values:',property)
+    --         --return
+    --     end
+       --    print(property, v)
 
-        if v then
-            if self.TWINFO then
+        if v  ~= nil then
+            if self.TWINFO and not table.find(DISABLED_TWEEN_DATATYPES, typeof(v)) then
                 TweenService:Create(self.Instance, self.TWINFO, {[Property] = v}):Play()
             else
                 self.Instance[Property] = v
+                
             end
         end
-        
+
         
     end
 end
@@ -51,11 +72,11 @@ function HandlerClass:Add(Property, _value, Priority, Time)
         self.Values[Property] = {}
     end
     if not self.DefaultValues[Property] then
-        self.DefaultValues[Property] = _value
+        self.DefaultValues[Property] = self.Instance[Property]
     end
 
     Priority = math.max(Priority or 1, 1)
-    if not _value then
+    if _value == nil then
         error('Value cannot be empty')
     end
     

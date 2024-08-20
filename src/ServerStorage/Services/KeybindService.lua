@@ -1,7 +1,11 @@
+local CollectionService = game:GetService("CollectionService")
+local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Knit = require(ReplicatedStorage.Packages.Knit)
 local BridgeNet2 = require(ReplicatedStorage.Packages.bridgenet2)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+
+local Util = require(ReplicatedStorage.Utilities.Util)
 
 local KeybindService = Knit.CreateService {
     Name = "KeybindService",
@@ -32,6 +36,34 @@ end
 function KeybindService:KnitInit()
     PlayerDataService = Knit.GetService("PlayerDataService")
     PlayerDataService:AwaitLoad("Keybind")
+
+    self:SetDefaultKeybind('Interact', Enum.KeyCode.F)
+end
+
+function KeybindService:SetObjectInteract(Object: BasePart, ActionText: string)
+    local proximity = Util.new('ProximityPrompt', {
+        ActionText = ActionText,
+        Parent = Object,
+        Exclusivity = Enum.ProximityPromptExclusivity.OneGlobally
+    })
+
+    CollectionService:AddTag(proximity, 'Proximity')
+
+    local function finish()
+        
+        local attachment = Util.new('Attachment', {
+            Parent = workspace.Terrain,
+            WorldCFrame = Object.CFrame
+        })
+
+        proximity.Parent = attachment
+
+        Debris:AddItem(attachment, 1)
+        proximity.Enabled = false
+        
+    end
+
+    return proximity, finish
 end
 
 function KeybindService:OnKeybindTrigger(keybind, fn)

@@ -1,4 +1,6 @@
+local GuiService = game:GetService("GuiService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local roact = require(game.ReplicatedStorage:WaitForChild('Utilities'):WaitForChild('Roact'))
 local Knit = require(ReplicatedStorage:WaitForChild('Packages'):WaitForChild('Knit'))
@@ -11,13 +13,36 @@ function Follow:init()
     self.Cleaner = Trove.new()
 end
 
+function Follow:UpdatePosition()
+    local Frame: Frame = self.MainFrame.current
+    local mousePos = UserInputService:GetMouseLocation()
+    local resolution = workspace.CurrentCamera.ViewportSize
+    local frameSize = Frame.AbsoluteSize
+    local boundary = Vector2.new(
+        math.max(resolution.X - frameSize.X * 1.2,0),
+        math.max(resolution.Y - frameSize.Y * 1.2,0)
+    )
+
+    local position = Vector2.new(
+        math.clamp(mousePos.X, 0, boundary.X),
+        math.clamp(mousePos.Y, 0, boundary.Y)
+    )
+
+    Frame.Position = UDim2.fromOffset(position.X,position.Y)
+end
+
 function Follow:didMount()
-    local Frame = self.MainFrame:getValue()
-    self.Cleaner:Connect(UserInputService.InputChanged, function(input:InputObject)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            Frame.Position = UDim2.fromOffset(input.Position.X,input.Position.Y)
-        end
+    self:UpdatePosition()
+
+    self.Cleaner:Connect(RunService.RenderStepped, function()
+        self:UpdatePosition()
     end)
+
+    -- self.Cleaner:Connect(UserInputService.InputChanged, function(input:InputObject)
+    --     if input.UserInputType == Enum.UserInputType.MouseMovement then
+    --         self:UpdatePosition()
+    --     end
+    -- end)
 end
 
 function Follow:willUnmount()
@@ -30,11 +55,20 @@ function Follow:render()
         BackgroundTransparency = 0.4,
         BackgroundColor3 = Color3.new(),
         ["ref"] = self.MainFrame,
-        AutomaticSize = Enum.AutomaticSize.Y
+        AutomaticSize = Enum.AutomaticSize.Y,
+        BorderSizePixel = 0,
     }, {
         --Children = roact.createElement(roact.Fragment, nil, self.props['children']),
         Children =  roact.createElement(roact.Fragment, nil, self.props['children']),
-        List = roact.createElement('UIListLayout', {})
+        List = roact.createElement('UIListLayout', {
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            HorizontalAlignment = 'Center'
+        }),
+        Stroke = roact.createElement('UIStroke', {
+            Color = Color3.new(),
+            Thickness = 5,
+            Transparency = 0.4
+        })
     })
 end
 

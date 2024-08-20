@@ -15,6 +15,12 @@ local StatService = Knit.CreateService {
     Client = {},
 }
 
+StatService.Formula = Stats.Formula
+
+local MaxLevel = 50
+
+local MaxExp = StatService.Formula.GetExp(MaxLevel)
+
 local PlayerStats = {}
 
 local function BuildDataTemplate()
@@ -56,19 +62,25 @@ local function OnPlayerAdded(player, data)
             
             local id = arg[2]
             local stat = arg[3]
-            local mult = tonumber(arg[4]) or 0
-            local flat = tonumber(arg[5]) or 0 
+            local mult = math.clamp(tonumber(arg[4]) or 0, 0, 100)
+            local flat = math.clamp(tonumber(arg[5]) or 0 ,0, 100000000)
 
-            PlayerStatsModifier:SetModifier(id, {
-                [stat] = {
-                    Multiplier = mult,
-                    Flat = flat
-                }
-            })
+            if Stats[stat] then
+                
+                PlayerStatsModifier:SetModifier(id, {
+                    [stat] = {
+                        Multiplier = mult,
+                        Flat = flat
+                    }
+                })
 
-            print(`Added modifier named {id} | Stat:{stat} Mult:{mult*100}% Flat:{flat}`)
-            local newStat = PlayerStatsModifier:Get(stat)
-            print(`New {stat} value : {newStat}`)
+                
+                print(`Added modifier named {id} | Stat:{stat} Mult:{mult*100}% Flat:{flat}`)
+                local newStat = PlayerStatsModifier:Get(stat)
+                print(`New {stat} value : {newStat}`)
+            end
+
+
         elseif arg[1] == "removemodifier" then
             local id = arg[2]
             PlayerStatsModifier:RemoveModifier(id)
@@ -79,9 +91,13 @@ local function OnPlayerAdded(player, data)
             print(PlayerStatsModifier)
         end
     end)
+
+    Util.CharacterAdded(player, function(char: Model)
+        local _, level = StatService:GetExpAndLevel(player)
+        char:SetAttribute('Level', math.floor(level))
+    end, false)
 end
 
-StatService.Formula = Stats.Formula
 
 function StatService:GetStats(player)
    return Util.GetAsync(PlayerStats, player, "Stats")
@@ -92,22 +108,22 @@ function StatService:GetExpAndLevel(player)
     return StatsData.Exp, StatsData.Level
 end
 
-function StatService:CreateMobStats(RawStats, Level)
+function StatService:CreateMobStats(RawStats, Level, Model)
     for stat, metadata in Stats do
         if not RawStats[stat] then
             RawStats[stat] = metadata.DefaultValue
         end
     end
-    return StatsModifier.newForMob {
+    return StatsModifier.newForMob ({
         RawStats = RawStats,
         Level = Level
-    }
+    }, Model)
 end
 
 function StatService:AddExp(player:Player, value)
     local PlayerData = PlayerDataService:GetPlayerData(player)
 
-    local NewExp = PlayerData.Stats.Exp + value
+    local NewExp = math.clamp(PlayerData.Stats.Exp + value, 1, MaxExp)
     local NewLevel = self.Formula.GetLevel(NewExp)
 
     PlayerData.Replica:SetValues({"Stats"}, {
@@ -117,6 +133,8 @@ function StatService:AddExp(player:Player, value)
 
     local Modifier = self:GetStats(player)
     Modifier.ExpChanged:Fire(NewExp, NewLevel)
+
+    player.Character:SetAttribute('Level', math.floor(NewLevel))
 
     return NewExp, NewLevel
 end

@@ -16,17 +16,34 @@ function Runtime.new()
         Trove = Trove.new(),
         IsPlaying = false,
         IsPaused = false,
+        Keyframe = 0,
+        LastStep = 0,
+        WaitTime = 0,
         Duration = 0 -- Default to 0 if no Duration is provided
     }, Runtime)
 
     self.Changed = self.Trove:Construct(Signal)
     self.Completed = self.Trove:Construct(Signal)
+    self.KeyframeChanged = self.Trove:Construct(Signal)
     
     return self
 end
 
 function Runtime.newKeyframe(TimePosition, Value, Name)
-    return {TimePosition, Value, Name}
+    return {
+        [1] = TimePosition, 
+        [2] = Value, 
+        [3] = Name,
+    
+        TimePosition = TimePosition,
+        Value = Value,
+        Name = Name
+    
+    }
+end
+
+function Runtime:SetWaitTime(t)
+    self.WaitTime = t
 end
 
 function Runtime:AddKeyframe(TimePosition, Value)
@@ -104,7 +121,11 @@ function Runtime:Play()
 
     self.PlayingState:Connect(RunService.Heartbeat, function(dt)
         if not self.IsPaused then
-            self:SetTimePosition(self.TimePosition + dt)    
+            if (os.clock() - self.LastStep) > self.WaitTime then
+                self.LastStep = os.clock()
+                self:SetTimePosition(self.TimePosition + self.WaitTime + dt)  
+            end
+              
         end
         
     end)
@@ -125,6 +146,7 @@ function Runtime:Stop()
     self.IsPlaying = false
     self.IsPaused = false
     self.TimePosition = 0
+    self.Keyframe = 0
 
     if self.PlayingState then
         self.PlayingState:Clean()
@@ -142,6 +164,11 @@ function Runtime:Interpolate(timePosition)
         if self.Keyframes[i][1] <= timePosition and self.Keyframes[i+1][1] >= timePosition then
             before = self.Keyframes[i]
             after = self.Keyframes[i+1]
+            if self.Keyframe ~= i then
+                self.Keyframe = i
+
+                self.KeyframeChanged:Fire(before, after)
+            end
             break
         end
     end

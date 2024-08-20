@@ -1,8 +1,10 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CategoryItems = {}
 local UnmappedItems = {}
 
 local Rating = require(script.Parent:WaitForChild"Rating")
 local EquipType = require(script:WaitForChild"EquipmentType")
+local Util = require(ReplicatedStorage.Utilities.Util)
 
 local Items = {
     Category = CategoryItems,
@@ -37,6 +39,33 @@ function ItemClass:GetModel()
     return self.Model and game.ReplicatedStorage.Models[self.Model]
 end
 
+function ItemClass:BuildViewportItem(MakeSolid)
+    local model = self:GetModel()
+    if model then
+        model = model:Clone()
+        
+        if MakeSolid then
+            Util.MakeSolid(model)
+        end
+
+        local primaryPart = model.PrimaryPart or model:FindFirstChildWhichIsA('BasePart', true)
+        local TypeInfo = self:GetTypeInfo()
+
+        if TypeInfo.ApplyInstanceViewport then
+            local rig = ReplicatedStorage.Models.Rig:Clone()
+            rig.Parent = workspace
+            model.Parent = rig
+            TypeInfo.ApplyInstanceViewport(model, rig)
+
+            --print(rig, 'TypeInfo Viewport apply')
+
+            return rig, primaryPart
+        end
+
+        return model, primaryPart
+    end
+end
+
 local ModuleClass = {}
 
 function ModuleClass:__index(index)
@@ -62,6 +91,7 @@ function ModuleClass:GetTypeInfo(Type)
     return Items.Type[Type]
 end
 
+
 local function Initialize()
 
     for _, Info in Items.Type do
@@ -71,7 +101,7 @@ local function Initialize()
         end
     end
 
-    for _, categoryFolder in script:GetChildren() do
+    for _, categoryFolder in ReplicatedStorage.Items:GetChildren() do
         if not categoryFolder:IsA('Folder') then
             continue
         end

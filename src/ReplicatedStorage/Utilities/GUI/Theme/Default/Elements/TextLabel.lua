@@ -1,4 +1,7 @@
-local roact = require(game.ReplicatedStorage:WaitForChild("Utilities"):WaitForChild("Roact"))
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local roact = require(ReplicatedStorage.Utilities.Roact)
+
+local RoactSpring = require(ReplicatedStorage.Packages.ReactSpring)
 
 --local TextLabel = roact.PureComponent:extend("TextLabel")
 
@@ -16,7 +19,7 @@ type prop = {
 }
 
 local TextLabel = roact.forwardRef(function(props, ref)
-    local textsize
+    local textsize = props.TextSize
     if props.TextScale then
         local camera = workspace.CurrentCamera
         local vp = camera.ViewportSize
@@ -26,12 +29,39 @@ local TextLabel = roact.forwardRef(function(props, ref)
     if props.TextScaled ~= nil then
         TextScaled = props.TextScaled
     end
-    return roact.createElement("TextLabel", {
+
+    local styles, api = nil, nil
+
+    if props.Blinking == true then
+       styles, api = RoactSpring.useSpring(function()
+        return {
+            from = {transparency = 1},
+            to = {transparency = 0},
+            
+       }
+       end) 
+
+       roact.useEffect(function()
+            local blink = false
+            local function start()
+                blink = not blink
+                api.start({
+                    from = {transparency = blink and 1 or 0};
+                    to = {transparency = blink and 0 or 1};
+                    config = {duration = 0.5}
+                }):andThenCall(start)
+            end
+
+            start()
+       end)
+    end
+
+    return roact.createElement(props.TextButton and 'TextButton' or "TextLabel", {
         Text = props.Text or "Text Label",
         Size = props.Size or UDim2.fromScale(1,1),
         Position =  props.Position or UDim2.new(),
         AnchorPoint = props.AnchorPoint or Vector2.new(),
-        BackgroundTransparency = 1,
+        BackgroundTransparency = props.BackgroundTransparency or 1,
         TextScaled = TextScaled,
         LayoutOrder = props.LayoutOrder or 0,
         TextSize = textsize,
@@ -46,7 +76,9 @@ local TextLabel = roact.forwardRef(function(props, ref)
         TextColor3 = props.TextColor3 or Color3.new(1,1,1),
         TextStrokeColor3 = props.TextStrokeColor3 or Color3.new(),
         TextStrokeTransparency = props.TextStrokeTransparency or 1,
-        ["ref"] = ref
+        TextTransparency = props.Blinking and styles.transparency or props.TextTransparency,
+        ["ref"] = ref,
+        [roact.Event.Activated] = props[roact.Event.Activated]
     })
 end)
 

@@ -48,6 +48,9 @@ function Frame:render(LayoutOrder, props)
             i += indexOffset
             if typeof(child) == 'function' then
                 local element, offset = child(i, props)
+                if typeof(element) == 'function' then
+                    element = roact.createElement(element, props)
+                end
                 children[`Element{i}`] = element
                 indexOffset += (offset or 0)
             else

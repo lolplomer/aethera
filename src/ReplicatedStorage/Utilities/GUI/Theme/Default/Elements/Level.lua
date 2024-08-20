@@ -3,8 +3,7 @@ local roact = require(game.ReplicatedStorage:WaitForChild('Utilities'):WaitForCh
 local Level = roact.PureComponent:extend()
 local Knit = require(game.ReplicatedStorage:WaitForChild('Packages'):WaitForChild('Knit'))
 
-local PlayerStats = Knit.GetController('PlayerReplicaController'):GetReplica('PlayerStats')
-local ReplicaData = Knit.GetController('PlayerDataController'):GetPlayerData()
+local PlayerDataController = Knit.GetController('PlayerDataController')
 
 local GUI = Knit.GetController('GUI')
 local Formula = require(game.ReplicatedStorage:WaitForChild"Utilities":WaitForChild"Misc":WaitForChild"StatFormula")
@@ -27,6 +26,10 @@ function Level:willUnmount()
 end
 
 function Level:update()
+    local ReplicaData = PlayerDataController.PlayerData
+    if not ReplicaData then
+        return
+    end
     local LevelLabel = self.Label:getValue()
     local Bar = self.Bar:getValue()
     local BarLabel = self.BarLabel:getValue()
@@ -43,13 +46,17 @@ end
 
 function Level:didMount()
 
-    self.cleaner:Add(ReplicaData.Replica:ListenToRaw(function(_,path)
-        if path[1]=='Stats' then
-            self:update()
-        end
-    end))
+    task.defer(function()
+        local ReplicaData = PlayerDataController:GetPlayerData()
+        self.cleaner:Add(ReplicaData.Replica:ListenToRaw(function(_,path)
+            if path[1]=='Stats' then
+                self:update()
+            end
+        end))
+    
+        self:update()
+    end)
 
-    self:update()
 end
 
 function Level:didUpdate()

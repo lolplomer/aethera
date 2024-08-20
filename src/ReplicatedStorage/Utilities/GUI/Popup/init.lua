@@ -5,17 +5,16 @@ local Popup = {}
 Popup.Layouts = {}
 
 function Popup.CreateLayout(element, props)
-    print('Creating layout:',props)
     local Layout = Popup.Layouts[props.LayoutType or 'Normal']
 
-    return roact.createElement('ScreenGui', {
-        DisplayOrder = 100,
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
-        ResetOnSpawn = false,
-    }, {
-        Frame = roact.createElement(Layout, props, {
-            Content = element
-        })
+    return roact.createElement(Layout, props, {
+        Content = element,
+        -- Padding = roact.createElement('UIPadding', {
+        --     PaddingBottom = UDim.new(0.05,0),
+        --     PaddingTop = UDim.new(0.05,0),
+        --     PaddingLeft = UDim.new(0.03,0),
+        --     PaddingRight = UDim.new(0.03,0),
+        -- })
     })
 end
 

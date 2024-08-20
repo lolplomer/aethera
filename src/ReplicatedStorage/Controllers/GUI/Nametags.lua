@@ -40,6 +40,7 @@ function NametagClass.new(Entity)
     Billboard.Parent = Player.PlayerGui
     Billboard.Adornee = Entity
     Billboard.StudsOffset = Vector3.new(0,0,-3)
+    Billboard.PlayerToHideFrom = game.Players:GetPlayerFromCharacter(self.Character)
 
     local root = ReactRoblox.createRoot(Billboard)
 
@@ -50,10 +51,10 @@ function NametagClass.new(Entity)
     
     nametags[Entity] = self
 
-    print('New nearby entity', self.Character)
+   -- print('New nearby entity', self.Character)
 
     self.Trove:Add(function()
-        print('Nearby entity removed',self.Character)
+       -- print('Nearby entity removed',self.Character)
         nametags[self.Entity] = nil
         self.Gui:unmount()
         Billboard:Destroy()
@@ -104,7 +105,8 @@ function module:RenderEntityNametag()
             end
         end
         for _, Entity in NearbyEntities do
-            NametagClass.new(Entity)    
+            task.spawn(NametagClass.new, Entity)
+--            NametagClass.new(Entity)    
         end
     end
 end

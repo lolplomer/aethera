@@ -74,7 +74,7 @@ return function(props)
         BackgroundTransparency = 0.9,
         LayoutOrder = statInfo.LayoutOrder,
         [roact.Event.MouseEnter] = function()
-            GUI:CreatePopup(roact.createElement(popup,{Stat=props.Stat,}), "StatHover", {
+            GUI:CreatePopup("StatHover", roact.createElement(popup,{Stat=props.Stat,}), {
                 LayoutType = 'Follow', Size = UDim2.fromScale(0.15,0)
             })
         end,

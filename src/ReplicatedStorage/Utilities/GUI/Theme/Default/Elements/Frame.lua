@@ -26,7 +26,8 @@ return roact.forwardRef(function(props, ref)
         BorderSizePixel = 0,
         Position = UDim2.fromScale(0.5,0.5),
         Visible = visible,
-        ["ref"] = ref
+        ["ref"] = ref,
+        GroupTransparency = props.GroupTransparency
     }, {
         DecorativeFrame = roact.createElement("ImageLabel", {
             BackgroundTransparency = 1,

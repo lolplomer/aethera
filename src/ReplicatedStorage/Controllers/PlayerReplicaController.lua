@@ -16,14 +16,13 @@ replicaClass.__index = function(self, index)
     return rawget(self,index) or self.Replica.Data[index]
 end
 
-function PlayerReplicaController:KnitInit()
-    
-end
+PlayerReplicaController.ReplicaClass = replicaClass
 
-function PlayerReplicaController:GetReplica(class, player)
+
+function PlayerReplicaController:GetReplica(class, player, timeout)
     player = player or Player
     local dir = util.GetAsync(Replicas, class, "Client Replica")
-   return util.GetAsync(dir, player, 'Player Replica')
+   return util.GetAsync(dir, player, 'Player Replica', timeout)
 end
 
 ReplicaController.NewReplicaSignal:Connect(function(replica)

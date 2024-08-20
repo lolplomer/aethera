@@ -65,8 +65,18 @@ function InputController:OnKeybindTrigger(KeybindName, Fn)
     end)
 end
 
+function InputController:OnKeybindTriggerEnded(keybindName, Fn)
+    return self.KeybindTriggerEnded:Connect(function(keybind, index)
+        if keybind == keybindName then
+            Fn(index)    
+        end
+    end)
+end
+
 function InputController:GetInputOfKeybind(keybind, index)
-    local PlayerData = PlayerDataController:GetPlayerData()
+    local PlayerData = PlayerDataController.PlayerData
+    if not PlayerData then return Enum.KeyCode.Zero end
+
     local inputs = PlayerData.Keybinds[keybind]
     index = index or 1
     if inputs then
@@ -75,7 +85,9 @@ function InputController:GetInputOfKeybind(keybind, index)
 end
 
 function InputController:FindKeybindFromInput(input)
-    local PlayerData = PlayerDataController:GetPlayerData()
+    local PlayerData = PlayerDataController.PlayerData
+    if not PlayerData then return end
+    
     for keybind, Inputs in PlayerData.Keybinds do
         for index, inputData in Inputs do
             if InputConverter:ReadInputData(inputData) == input then

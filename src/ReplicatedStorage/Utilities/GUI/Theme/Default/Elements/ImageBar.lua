@@ -15,6 +15,7 @@ return function (props)
         ImageTransparency = props.ImageTransparency
     }, {
         Gradient = Roact.createElement('UIGradient', {
+            Rotation = props.Rotation,
             Transparency = props.Value:map(function(value)
                 return NumberSequence.new {
                     NumberSequenceKeypoint.new(0,0),
@@ -24,6 +25,7 @@ return function (props)
                 }
             end)
             --Transparency = 0.5
-        })
+        }),
+        Children = Roact.createElement(Roact.Fragment, nil, props['children'])
     })
 end

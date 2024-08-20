@@ -7,7 +7,10 @@ return ByteNet.defineNamespace('Mob', function()
             value = ByteNet.struct {
                 At = ByteNet.vec3,
                 Direction = ByteNet.vec3,
-                Model = ByteNet.inst
+                Model = ByteNet.inst,
+                State = ByteNet.string,
+                Instant = ByteNet.optional(ByteNet.bool),
+                Duration = ByteNet.optional(ByteNet.float64)
             },
             reliabilityType = 'unreliable'
         },
@@ -21,6 +24,13 @@ return ByteNet.defineNamespace('Mob', function()
             value = ByteNet.struct {
                 Model = ByteNet.inst,
                 State = ByteNet.string
+            }
+        },
+        Animation = ByteNet.definePacket {
+            value = ByteNet.struct {
+                Model = ByteNet.inst,
+                Animation = ByteNet.string,
+                Category = ByteNet.optional(ByteNet.string)
             }
         }
     }
