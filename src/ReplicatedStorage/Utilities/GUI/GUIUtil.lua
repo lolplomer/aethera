@@ -1,9 +1,37 @@
 local util = {}
 
+local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local TWS = game:GetService'TweenService'
 local Tween = TweenInfo.new(0.15)
 
 local Promise = require(game.ReplicatedStorage:WaitForChild"Utilities":WaitForChild"Promise")
+
+local roactSpring = require(ReplicatedStorage.Packages.ReactSpring)
+local roact = require(ReplicatedStorage.Utilities.Roact)
+
+function util.useFadeEffect(visibleProp)
+    local visible, setVisible = roact.useBinding(visibleProp)
+
+    local styles, api = roactSpring.useSpring(function()
+        return {
+            transparency = if visibleProp then 0 else 1,
+            config = { tension = 170, friction = 26 },
+        }
+    end)
+
+    -- Update the spring whenever 'Visible' changes
+    roact.useEffect(function()
+        if visibleProp then
+            setVisible(true)
+        end
+        local animation = api.start({
+            transparency = if visibleProp then 0 else 1,
+        }):andThenCall(setVisible, visibleProp)
+        
+    end, {visibleProp})
+
+    return styles.transparency, visible
+end
 
 function util.CheckDisabledProperty(selfcomponent)
     local self = selfcomponent
@@ -69,5 +97,9 @@ function util.ImplementAnimatedOpenClose(component, config)
     end
 
 end
+
+util.Color = require(ReplicatedStorage.Utilities.Misc.ColorUtil)
+
+
 
 return util

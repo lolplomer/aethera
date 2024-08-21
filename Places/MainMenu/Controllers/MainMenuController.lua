@@ -46,7 +46,7 @@ function MainMenuController:UpdateCamera(immediate)
 
     local Scale = (MouseLoc - Center)/Center
 
-    local MouseMovement = CFrame.Angles(rad(Scale.Y * 5),rad(Scale.X * 5),0)
+    local MouseMovement = CFrame.Angles(-rad(Scale.Y * 5),-rad(Scale.X * 5),0)
     local Shake = CFrame.Angles(rad(math.sin(os.clock()) * 1), rad(math.cos(os.clock()) * 1), 0)
 
     local Goal = CameraPart.CFrame * MouseMovement * Shake

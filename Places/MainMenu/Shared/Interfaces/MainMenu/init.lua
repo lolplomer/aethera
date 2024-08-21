@@ -9,16 +9,23 @@ local TextLabel = require(elements.TextLabel)
 local promise = require(ReplicatedStorage.Utilities.Promise)
 local Knit = require(ReplicatedStorage.Packages.Knit)
 local Trove = require(ReplicatedStorage.Packages.Trove)
+local Util = require(ReplicatedStorage.Utilities.GUI.GUIUtil)
 
 local MainMenuController = Knit.GetController("MainMenuController")
 local GUI = Knit.GetController('GUI')
 
 local sleep = promise.promisify(task.wait)
 
+local Customization = require(script.Customization)
+
 local group = {
     data = nil,
     emblem = nil,
     id = 7154107
+}
+
+local VisibleBackButton = {
+    Customization = true
 }
 
 group.data = promise.new(function(resolve)
@@ -27,6 +34,14 @@ group.data = promise.new(function(resolve)
     resolve(data)
 end)
 
+
+local function Notice(text, blink)
+    GUI:CreatePopup('MainMenu', roact.createElement(TextLabel,{Text = text, Blinking = blink}))
+end
+
+local function Dismiss()
+    GUI:ClosePopup('MainMenu')
+end
 local function Square(props)
     return roact.createElement('Frame', {
         Size = UDim2.fromScale(1,1),
@@ -248,33 +263,16 @@ local function MenuButton(props)
     })
 end
 
-local function Customization(props)
+local function Back(props)
 
-    local main = roact.useRef()
-    local a, api = roactSpring.useSpring(function()
-        return {
-            transparency = 0
-        }
-    end)
+    local transparency, visible = Util.useFadeEffect(props.Visible)
 
-    roact.useEffect(function()
-        print(main.current)
-        if props.Visible then
-            main.current.Visible = true
-        end
-        api.start ({transparency = props.Visible and 0 or 1}):andThen(function()
-            if main.current then
-                main.current.Visible = props.Visible
-            end
-            
-        end)
-    end)
 
     return roact.createElement('CanvasGroup', {
         Size = UDim2.fromScale(1,1),
         BackgroundTransparency = 1,
-        GroupTransparency = a.transparency,
-        ref = main,
+        GroupTransparency = transparency,
+        Visible = visible
     }, {
         roact.createElement('UIPadding', {
             PaddingLeft = UDim.new(0,10),
@@ -286,10 +284,10 @@ local function Customization(props)
         roact.createElement(TextLabel, {
             TextButton = true,
 
-            Size = UDim2.fromScale(.1,.05),
+            Size = UDim2.fromScale(.2,.05),
             Position = UDim2.fromScale(0,0.07),
 
-            Text = `< Back`,
+            Text = `Back to Main Menu`,
 
             [roact.Event.Activated] = function()
                 props.Scene('End')
@@ -303,12 +301,11 @@ local function Menu(props)
 
     --local movement, setMovement = roact.useBinding(workspace.CurrentCamera.ViewportSize/2)
 
-    local main = roact.useRef()
+    local transparency, visible = Util.useFadeEffect(props.Visible)
 
     local style, api = roactSpring.useSpring(function()
         return {
             move = Vector2.zero,
-            transparency = 0
         }
     end)
 
@@ -326,16 +323,6 @@ local function Menu(props)
     local button = roactSpring.useSprings(length, buttonProps)
 
     roact.useEffect(function()
-
-        if props.Visible then
-            main.current.Visible = true
-        end
-        api.start({transparency = props.Visible and 0 or 1}):andThen(function()
-            if main.current then
-                main.current.Visible = props.Visible    
-            end
-            
-        end)
 
         local Conn = RunService.Heartbeat:Connect(function()
             local camera = workspace.CurrentCamera
@@ -359,11 +346,11 @@ local function Menu(props)
     return roact.createElement('CanvasGroup', {
         Size = UDim2.fromScale(1,1),
         BackgroundTransparency = 1,
-        GroupTransparency = style.transparency,
+        GroupTransparency = transparency,
+        Visible = visible,
         AnchorPoint = Vector2.new(0.5,0.5),
         Position = UDim2.fromScale(.5,.5),    
         ZIndex = 1,
-        ref = main
     }, {
         List = roact.createElement('Frame', {
             Size = UDim2.fromScale(0.4,0.4),
@@ -393,6 +380,9 @@ local function Menu(props)
                 Position = button[3].value:map(function(value)
                     return UDim2.fromScale(0.5 + value, 0.25) 
                 end),
+                Callback = function()
+                    Notice('Coming soon!')
+                end
             }) ,
 
             --roact.createElement(MenuButton, {Text = 'Options'})
@@ -412,14 +402,6 @@ local function Menu(props)
     }) 
 end
 
-
-local function Notice(text, blink)
-    GUI:CreatePopup('MainMenu', roact.createElement(TextLabel,{Text = text, Blinking = blink}))
-end
-
-local function Dismiss()
-    GUI:ClosePopup('MainMenu')
-end
 
 local function Main()
 
@@ -441,7 +423,7 @@ local function Main()
 
         elseif scene == 'Customization' then
 
-            local wait;wait = trove:AddPromise(sleep(.5)):andThen(function()
+            local wait;wait = trove:AddPromise(sleep(.3)):andThen(function()
                 trove:Remove(wait)
                 MainMenuController:SwitchCamera('Customization')
             end)
@@ -509,9 +491,13 @@ local function Main()
             Visible = scene == 'End'
         }),
 
-        avatar = roact.createElement(Customization, {
+        back = roact.createElement(Back, {
             Scene = setScene,
-            Visible = scene == 'Customization',
+            Visible = VisibleBackButton[scene],
+        }),
+
+        customization = roact.createElement(Customization, {
+            Visible = scene == 'Customization'
         })
     })
     

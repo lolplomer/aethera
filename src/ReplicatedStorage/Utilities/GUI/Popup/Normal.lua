@@ -38,7 +38,7 @@ end
 function PopupComponent:render()
     local props = self.props
     return roact.createElement("CanvasGroup", {
-        BackgroundColor3 = Color3.fromRGB(102, 133, 168),
+        BackgroundColor3 = Color3.fromRGB(233, 235, 248),
         
         Position = props.Position or UDim2.fromScale(0.5,0.5),
         AnchorPoint = props.AnchorPoint or Vector2.new(0.5,0.5),
@@ -56,15 +56,25 @@ function PopupComponent:render()
         end,
         ["ref"] = self.MainFrame
     }, {
-        Children =  roact.createElement(roact.Fragment, nil, self.props['children']),
         Ratio = props.UseRatio ~= false and roact.createElement("UIAspectRatioConstraint", {AspectRatio = 2.63}),
-        Corner = roact.createElement("UICorner"),
-        Stroke = roact.createElement("UIStroke", {Thickness = 3.5, Color = Color3.fromRGB(233, 235, 248)}),
-        Padding = roact.createElement('UIPadding', {
-            PaddingTop = UDim.new(0.1,0),
-            PaddingBottom = UDim.new(0.1,0),
-            PaddingRight = UDim.new(0.1,0),
-            PaddingLeft = UDim.new(0.1,0),
+        Corner = roact.createElement("UICorner", {CornerRadius = UDim.new(0,8)}),
+        --Stroke = roact.createElement("UIStroke", {Thickness = 3.5, Color = Color3.fromRGB(233, 235, 248)}),
+  
+        Inner = roact.createElement('Frame', {
+            Size = UDim2.new(1,-8,1,-8),
+            BackgroundColor3 = Color3.fromRGB(102, 133, 168),
+            BorderSizePixel = 0,
+            AnchorPoint = Vector2.new(.5,.5),
+            Position = UDim2.fromScale(.5,.5)
+        }, {
+            Children =  roact.createElement(roact.Fragment, nil, self.props['children']),
+            Corner = roact.createElement("UICorner", {CornerRadius = UDim.new(0,8)}),
+            Padding = roact.createElement('UIPadding', {
+                PaddingTop = UDim.new(0.1,0),
+                PaddingBottom = UDim.new(0.1,0),
+                PaddingRight = UDim.new(0.1,0),
+                PaddingLeft = UDim.new(0.1,0),
+            }),
         })
     })
 end

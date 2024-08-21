@@ -100,4 +100,4 @@ function TextButton:didMount()
     --GUI.Tween(self.innerButtonRef:getValue(), {ImageColor3 = self.buttonColor})
 end
 
-return TextButton
+return require(script.Parent.TextButtonNew)

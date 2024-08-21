@@ -1,5 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local roact = require(ReplicatedStorage.Utilities.Roact)
+local util = require(ReplicatedStorage.Utilities.GUI.GUIUtil)
 
 local story = require(ReplicatedStorage.PlaceShared.RoactStory)
 local e = roact.createElement
@@ -9,11 +10,11 @@ local elements = ReplicatedStorage.Utilities.GUI.Theme.Default.Elements
 local TextLabel = require(elements.TextLabel)
 local TextButton = require(elements.TextButtonNew)
 
+local Title = require(script.Parent.Title)
+
 local RoactSpring = require(ReplicatedStorage.Packages.ReactSpring)
 
 local Avatar = require(ReplicatedStorage.GameModules.Avatar)
-
-
 
 local Direction = {
     Left = {
@@ -78,7 +79,9 @@ local function reducer(state, action)
     end
 end
 
-local function customization() 
+local function customization(props) 
+
+    local transparency, visible = util.useFadeEffect(props.Visible)
 
     local avatar, dispatch = roact.useReducer(reducer, {
         Skin = 0,
@@ -143,9 +146,13 @@ local function customization()
         }))
     end
 
+    
+
     return e('CanvasGroup', {
         Size = UDim2.fromScale(1,1),
         BackgroundTransparency = 1,
+        GroupTransparency = transparency,
+        Visible = visible
     }, {
         e('ImageLabel', {
             Size = UDim2.fromScale(.65,.65),
@@ -184,16 +191,21 @@ local function customization()
         e(TextButton, {
             Size = UDim2.fromScale(.2,.08),
             Text = 'Next',
-            Position = UDim2.fromScale(0.97,.9),
-            AnchorPoint = Vector2.new(1,1)
+            Position = UDim2.fromScale(1,.9),
+            AnchorPoint = Vector2.new(1,1),
+            AspectRatio = 4.57471264
             --Position = UDim2.fromScale(1,1)
         }),
 
         e('UIPadding', {
             PaddingRight = UDim.new(0.02,0),
             PaddingBottom = UDim.new(0.02,0)
+        }),
+
+        e(Title, {
+            Text = 'Customization'
         })
     })
 end
 
-return story(customization)
+return customization
