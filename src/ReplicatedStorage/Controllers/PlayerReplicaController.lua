@@ -1,5 +1,6 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Promise = require(ReplicatedStorage.Utilities.Promise)
 
 local Knit = require(ReplicatedStorage.Packages.Knit)
 
@@ -18,11 +19,16 @@ end
 
 PlayerReplicaController.ReplicaClass = replicaClass
 
-
 function PlayerReplicaController:GetReplica(class, player, timeout)
     player = player or Player
     local dir = util.GetAsync(Replicas, class, "Client Replica")
    return util.GetAsync(dir, player, 'Player Replica', timeout)
+end
+
+function PlayerReplicaController:GetReplicaAsPromise(class,player,timeout)
+    return Promise.new(function(resolve)
+        resolve(self:GetReplica(class, player, timeout))
+    end)
 end
 
 ReplicaController.NewReplicaSignal:Connect(function(replica)

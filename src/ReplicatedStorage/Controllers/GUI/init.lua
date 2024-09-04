@@ -151,24 +151,26 @@ function controller:CreatePopup(id, element, props, DeselectedCallback)
         self:UpdatePopup(id, layout)
     else
         --local tree = roact.mount(layout, player.PlayerGui, 'Popup')
-        local root = react_roblox.createRoot(createHandle())
+        local handle = createHandle()
+        handle.Name = id
+        local root = react_roblox.createRoot(handle)
         root:render(layout)
-        Popups[id] = root
+        Popups[id] = {root = root, handle = handle}
     end
     
 end
 
 function controller:UpdatePopup(id, newElement)
     if Popups[id] then
-        Popups[id]:render(newElement)
+        Popups[id].root:render(newElement)
         --Popups[id] = roact.update(Popups[id], newElement)
     end
 end
 
 function controller:ClosePopup(id)
-    local tree = Popups[id]
-    if tree then
-        tree:unmount()
+    if Popups[id] then
+        Popups[id].root:unmount()
+        Popups[id].handle:Destroy()
         --roact.unmount(tree)
     end
     Popups[id] = nil

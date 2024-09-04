@@ -9,6 +9,9 @@ local PlayerDataController = Knit.CreateController { Name = "PlayerDataControlle
 local PlayerDataReplica
 
 local player = game.Players.LocalPlayer
+local Promise = require(ReplicatedStorage.Utilities.Promise)
+
+
 
 function PlayerDataController:GetPlayerData()
     if not PlayerDataReplica then
@@ -19,6 +22,14 @@ function PlayerDataController:GetPlayerData()
         end
     end
     return PlayerDataReplica
+end
+
+local Get = Promise.promisify(function()
+    return PlayerDataController:GetPlayerData()
+end)
+
+function PlayerDataController:GetDataAsync()
+    return Get()
 end
 
 function PlayerDataController:KnitInit()

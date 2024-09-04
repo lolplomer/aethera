@@ -24,7 +24,7 @@ function util.useFadeEffect(visibleProp)
         if visibleProp then
             setVisible(true)
         end
-        local animation = api.start({
+        api.start({
             transparency = if visibleProp then 0 else 1,
         }):andThenCall(setVisible, visibleProp)
         

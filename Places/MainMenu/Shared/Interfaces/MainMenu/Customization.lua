@@ -2,7 +2,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local roact = require(ReplicatedStorage.Utilities.Roact)
 local util = require(ReplicatedStorage.Utilities.GUI.GUIUtil)
 
-local story = require(ReplicatedStorage.PlaceShared.RoactStory)
 local e = roact.createElement
 
 local elements = ReplicatedStorage.Utilities.GUI.Theme.Default.Elements
@@ -15,6 +14,10 @@ local Title = require(script.Parent.Title)
 local RoactSpring = require(ReplicatedStorage.Packages.ReactSpring)
 
 local Avatar = require(ReplicatedStorage.GameModules.Avatar)
+local Knit = require(ReplicatedStorage.Packages.Knit)
+
+local AvatarController = Knit.GetController('AvatarController')
+local GUI = Knit.GetController('GUI')
 
 local Direction = {
     Left = {
@@ -66,37 +69,54 @@ local function Arrow(props)
 end
 
 local function reducer(state, action)
-    if action.type == 'switch' then
-        state = table.clone(state)
-        local new = state[action.category] + action.index
-        if new > 15 then
-            new = 0
-        elseif new < 0 then
-            new = 15
-        end
-        state[action.category] = new
-        return state
-    end
+    state = table.clone(state)
+    state[action.category] = action.value
+    return state
 end
 
 local function customization(props) 
-
+    print(props.Done)
     local transparency, visible = util.useFadeEffect(props.Visible)
 
-    local avatar, dispatch = roact.useReducer(reducer, {
-        Skin = 0,
-        Hair1 = 0,
-        Hair2 = 0,
-        Uniform = 0,
-    })
+    local avatar = AvatarController:GetEditingData()
 
+    local bindings = {}
     local categories = {}
 
-    for Key, Value in avatar do
+    for category,_ in Avatar.Category do
+        local bind, set = roact.useBinding(avatar[category])
+        bindings[category] = {binding = bind, set = set}
+    end
+    
+    roact.useEffect(function()
+        if not props.Visible then
+            return
+        end
+        local connection = AvatarController.EditorChanged:Connect(function(category, value)
+            if bindings[category] then
+                bindings[category].set(value)
+            end
+        end)
+        for category, value in avatar do
+            bindings[category].set(value)
+        end
+        return function ()
+            connection:Disconnect()
+        end
+    end)
+
+    for Category, Module in Avatar.Category do
+
+        local Type = Module.Customization.Type
+
+        local IS_SELECTION = Type == 'Selection'
+
+
         table.insert(categories, e('ImageLabel', {
             Size = UDim2.fromScale(.9,.25),
             BackgroundColor3 = Color3.fromHex('587291'),
-            BorderSizePixel = 0
+            BorderSizePixel = 0,
+            LayoutOrder = Module.Customization.LayoutOrder or 99
         }, {
             e('UICorner'),
 
@@ -109,19 +129,15 @@ local function customization(props)
 
             e(TextLabel, {
                 Size = UDim2.fromScale(1,0.3),
-                Text = Key,
+                Text = Module.Customization.DisplayName or Category,
             }),
 
-            e(Arrow, {
+            IS_SELECTION and e(Arrow, {
                 Direction = 'Left',
                 Callback = roact.useCallback(function()
-                    print('left')
-                    dispatch{type = 'switch', category = Key, index = -1}
+                    AvatarController.Editor:PreviousSelection(Category)
                 end)
             }),
-
-            
-     
 
             e('Frame', {
                 Size = UDim2.fromScale(0.5,0.55),
@@ -130,17 +146,52 @@ local function customization(props)
                 BorderSizePixel = 0,
                 BackgroundColor3 = Color3.fromHex("43566D")
             }, {
-                e(TextLabel, {
-                    Text = Value
+                IS_SELECTION and e(TextLabel, {
+                    Text = bindings[Category].binding:map(roact.useCallback(function(value)
+                        return (Module.CustomLabel and Module.CustomLabel(value) or value) or 'N/A'
+                    end)),
+                    Visible = Module.Customization.Visible ~= false
                 }),
+
+                Type == 'Color' and e('ImageButton', {
+                    Size = UDim2.new(1,-9,1,-9),
+                    AnchorPoint = Vector2.new(0.5,0.5),
+                    Position = UDim2.fromScale(0.5,0.5),
+                    Image = '',
+                    BackgroundColor3 = bindings[Category].binding:map(roact.useCallback(function(value)
+                        return value and Color3.fromHex(value)
+                    end)),
+                    [roact.Event.Activated] = function()
+                        GUI:CreatePopup('ColorPicker' , GUI.newElement('ColorPicker', {
+                            OnChange = function(color: Color3)
+                                AvatarController:EditAvatar{
+                                    [Category] = color:ToHex()
+                                }
+                            end,
+                            Title = Module.Customization.DisplayName or Category,
+                            Color = avatar[Category] and Color3.fromHex(avatar[Category])
+                        }), {
+                            Ratio = 1.3,
+                            Position = UDim2.fromScale(0.04,0.5),
+                            Size = UDim2.fromScale(0.3,0.5),
+                            AnchorPoint = Vector2.new(0,.5)
+                        })
+                    end
+                }, {
+                    e('UICorner')
+                }),
+
+                Module.CustomView and roact.createElement(Module.CustomView, {
+                    value = bindings[Category].binding
+                }),
+
                 e('UICorner')
             }),
 
-            e(Arrow, {
+            IS_SELECTION and e(Arrow, {
                 Direction = 'Right',
                 Callback = roact.useCallback(function()
-                    print('right')
-                    dispatch{type = 'switch', category = Key, index = 1}
+                    AvatarController.Editor:NextSelection(Category)
                 end)
             })
         }))
@@ -177,7 +228,7 @@ local function customization(props)
                 e('UIListLayout', {
                     Padding = UDim.new(0,5) ,
                     HorizontalAlignment = Enum.HorizontalAlignment.Center,
-                    
+                    SortOrder = Enum.SortOrder.LayoutOrder
                 }),
 
                 e('UIPadding', {
@@ -193,7 +244,8 @@ local function customization(props)
             Text = 'Next',
             Position = UDim2.fromScale(1,.9),
             AnchorPoint = Vector2.new(1,1),
-            AspectRatio = 4.57471264
+            AspectRatio = 4.57471264,
+            Callback = props.Done
             --Position = UDim2.fromScale(1,1)
         }),
 

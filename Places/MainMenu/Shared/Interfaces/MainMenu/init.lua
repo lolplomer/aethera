@@ -12,6 +12,8 @@ local Trove = require(ReplicatedStorage.Packages.Trove)
 local Util = require(ReplicatedStorage.Utilities.GUI.GUIUtil)
 
 local MainMenuController = Knit.GetController("MainMenuController")
+local AvatarController = Knit.GetController('AvatarController')
+
 local GUI = Knit.GetController('GUI')
 
 local sleep = promise.promisify(task.wait)
@@ -433,9 +435,11 @@ local function Main()
             Notice("Checking Player Data...", true)
             
             trove:AddPromise(promise.new(function()
-                task.wait(3)
+                task.wait(1)
+                AvatarController:StartEditingAvatar()
                 Dismiss()
                 setScene('Customization')
+                
             end))
 
         end
@@ -497,7 +501,20 @@ local function Main()
         }),
 
         customization = roact.createElement(Customization, {
-            Visible = scene == 'Customization'
+            Visible = scene == 'Customization',
+            Done = roact.useCallback(function()
+                print("Done, saving avatar...")
+                Notice('Saving avatar...')
+                AvatarController:SaveAvatarCustomizationAsync():andThen(function()
+                    task.wait(1)
+                    Notice('Avatar Saved!')
+                    task.wait(1)
+                    Dismiss()
+                    setScene('End')
+                end):catch(function()
+                    Notice('Failed to save avatar')
+                end)
+            end)
         })
     })
     
@@ -505,5 +522,5 @@ end
 
 return {
     Component = Main,
-   -- Disabled = true
+    Disabled = false
 }

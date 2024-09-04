@@ -1,7 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local roact = require(ReplicatedStorage:WaitForChild('Utilities'):WaitForChild('Roact'))
-local GUIUtil = require(script.Parent.Parent:WaitForChild"GUIUtil")
+
 local TWINFO = TweenInfo.new(0.3)
 --local GUI = Knit.GetController("GUI")
 
@@ -10,7 +10,7 @@ local PopupComponent = roact.PureComponent:extend('Popup')
 function PopupComponent:didMount()
     local UIS = game:GetService("UserInputService")
     self.InputDetect = UIS.InputEnded:Connect(function(input, gameProcessedEvent)
-        if gameProcessedEvent then return end
+        --if gameProcessedEvent then return end
         if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseWheel) and not self.hovered then
             if self.props.DeselectedCallback then
                 self.props.DeselectedCallback()
@@ -56,12 +56,12 @@ function PopupComponent:render()
         end,
         ["ref"] = self.MainFrame
     }, {
-        Ratio = props.UseRatio ~= false and roact.createElement("UIAspectRatioConstraint", {AspectRatio = 2.63}),
+        Ratio = props.UseRatio ~= false and roact.createElement("UIAspectRatioConstraint", {AspectRatio = props.Ratio or 2.63}),
         Corner = roact.createElement("UICorner", {CornerRadius = UDim.new(0,8)}),
         --Stroke = roact.createElement("UIStroke", {Thickness = 3.5, Color = Color3.fromRGB(233, 235, 248)}),
   
         Inner = roact.createElement('Frame', {
-            Size = UDim2.new(1,-8,1,-8),
+            Size = UDim2.new(1,-10,1,-10),
             BackgroundColor3 = Color3.fromRGB(102, 133, 168),
             BorderSizePixel = 0,
             AnchorPoint = Vector2.new(.5,.5),
@@ -70,10 +70,10 @@ function PopupComponent:render()
             Children =  roact.createElement(roact.Fragment, nil, self.props['children']),
             Corner = roact.createElement("UICorner", {CornerRadius = UDim.new(0,8)}),
             Padding = roact.createElement('UIPadding', {
-                PaddingTop = UDim.new(0.1,0),
-                PaddingBottom = UDim.new(0.1,0),
-                PaddingRight = UDim.new(0.1,0),
-                PaddingLeft = UDim.new(0.1,0),
+                PaddingTop = UDim.new(0.05,0),
+                PaddingBottom = UDim.new(0.05,0),
+                PaddingRight = UDim.new(0.05,0),
+                PaddingLeft = UDim.new(0.05,0),
             }),
         })
     })

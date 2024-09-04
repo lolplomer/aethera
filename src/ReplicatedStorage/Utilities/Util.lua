@@ -2,6 +2,53 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Util = {}
 
 local Assets = ReplicatedStorage:WaitForChild'Assets'
+local Promise = require(ReplicatedStorage.Utilities.Promise)
+
+local Knit = require(ReplicatedStorage.Packages.Knit)
+
+local GetService = Promise.promisify(function(name)
+    return Knit.GetService(name)
+end)
+
+local GetController = Promise.promisify(function(name)
+    return Knit.GetController(name)
+end)
+
+function Util.GetChildrenInOrder(Model: Instance)
+    local children = Model:GetChildren()
+
+    table.sort(children, function(a, b)
+        return (tonumber(a.Name) or 999) < (tonumber(b.Name) or 999)
+    end)
+
+    return children
+end
+
+function Util.ServiceDependency()
+    local services = {}
+
+    return function (name)
+        if services[name] then
+            return services[name]
+        else
+            services[name] = GetService(name)
+            return services[name]
+        end
+    end
+end
+
+function Util.ControllerDependency()
+    local controllers = {}
+
+    return function (name)
+        if controllers[name] then
+            return controllers[name]
+        else
+            controllers[name] = GetController(name)
+            return controllers[name]
+        end
+    end
+end
 
 function Util.GetAsync(Source, Index, Name, Timeout)
 
@@ -21,6 +68,49 @@ function Util.GetAsync(Source, Index, Name, Timeout)
     end
 
     return Source[Index]    
+end
+
+function Util.LoadAnimation(rig, animationId)
+    local Animator = rig.Humanoid.Animator
+    local Animation = Instance.new('Animation')
+    Animation.AnimationId = animationId
+    Animation.Parent = Animator
+
+    return Animator:LoadAnimation(Animation)
+end
+
+function Util.AttachAccessory(model: Model, rig: Model)
+    local Handle: BasePart = model:FindFirstChild('Handle')
+    if not Handle then return end
+
+    local HandleAttachment: Attachment = Handle:FindFirstChildOfClass('Attachment')
+    local RigAttachment
+
+    local offset = {
+        Part = rig.Head,
+        C0 = CFrame.new(),
+        C1 = CFrame.new()
+    }
+    if HandleAttachment then
+        offset.C0 = HandleAttachment.CFrame
+        
+        RigAttachment = rig:FindFirstChild(HandleAttachment.Name, true)
+        if RigAttachment and RigAttachment:IsA('Attachment') then
+            offset.Part = RigAttachment.Parent
+            offset.C1 = RigAttachment.CFrame
+        end
+    end
+
+    print(HandleAttachment, RigAttachment)
+    local Weld = Instance.new('Weld')
+    Weld.Parent = Handle
+    Weld.Part0 = Handle
+    Weld.Part1 = offset.Part
+    Weld.C0 = offset.C0
+    Weld.C1 = offset.C1
+    
+
+
 end
 
 function Util.MakeSolid(model: Model)
@@ -220,5 +310,8 @@ local Angles = {
 function Util.MoveVectorToAngle(moveVector)
     return Angles[moveVector] or CFrame.Angles()
 end
+
+Util.GetService = Util.ServiceDependency()
+Util.GetController = Util.ControllerDependency()
 
 return Util

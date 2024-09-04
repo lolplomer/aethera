@@ -1,3 +1,5 @@
+task.wait()
+
 local ReplicatedStorage = game:GetService"ReplicatedStorage"
 local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
@@ -28,7 +30,7 @@ for _, v in ClonePlayerModule:GetChildren() do
     new.Parent = PlayerModule
 end
 
-if RunService:IsStudio() then
+if not RunService:IsStudio() then
     do
         local Assets = {
             Assets = 16312860421, 

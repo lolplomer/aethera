@@ -78,7 +78,8 @@ local TextLabel = roact.forwardRef(function(props, ref)
         TextStrokeTransparency = props.TextStrokeTransparency or 1,
         TextTransparency = props.Blinking and styles.transparency or props.TextTransparency,
         ["ref"] = ref,
-        [roact.Event.Activated] = props[roact.Event.Activated]
+        [roact.Event.Activated] = props[roact.Event.Activated],
+        Visible = props.Visible
     })
 end)
 
