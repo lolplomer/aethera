@@ -7,6 +7,8 @@ local Knit = require(ReplicatedStorage.Packages.Knit)
 local PlayerDataService = Knit.GetService('PlayerDataService')
 local CharacterService = Knit.GetService('CharacterService')
 
+local util = require(ReplicatedStorage.Utilities.Util)
+
 local getRandomPoint
 
 CharacterService.CharacterLoaded:Connect(function(character: Model, player: Player)
@@ -86,7 +88,14 @@ function service:_initializeAllWaypoints()
                     Name = wp.Name
                 };
 
-                wp:AddTag('Waypoint')
+                local attachment: Attachment = util.new('Attachment', {
+                    Parent = workspace.Terrain,
+                    WorldCFrame = pos,
+                    Name = wp.Name
+                })
+
+                attachment:AddTag('Waypoints')
+
             end
         end
 

@@ -194,7 +194,7 @@ function Mob.new(module, level, id, CF)
     -- end
 
 
-    self.Movement:SetWaitTime(0.05)
+    self.Movement:SetWaitTime(0.1)
 
     self.Movement.Changed:Connect(function(position, point, name)
 

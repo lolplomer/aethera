@@ -577,17 +577,18 @@ local function OnPlayerAdded(player:Player, data)
 	end)
 
     -- Adds some items to player inventory for testing
-    PlayerInv:AddItem("CycloneSword")
+
+    -- PlayerInv:AddItem("CycloneSword")
     
-    PlayerInv:AddItem('Auri')
-    PlayerInv:AddItem('ScarletDuskChestplate')
-    PlayerInv:AddItem('ScarletDuskLeggings')
+    -- PlayerInv:AddItem('Auri')
+    -- PlayerInv:AddItem('ScarletDuskChestplate')
+    -- PlayerInv:AddItem('ScarletDuskLeggings')
 
-    local itemStatus = PlayerInv:AddItem('BasicArmor')
-    PlayerInv:EquipItem(itemStatus.Id)
+    -- local itemStatus = PlayerInv:AddItem('BasicArmor')
+    -- PlayerInv:EquipItem(itemStatus.Id)
 
-    local itemStatus = PlayerInv:AddItem("BasicSword")
-    PlayerInv:EquipItem(itemStatus.Id, 1)
+    -- local itemStatus = PlayerInv:AddItem("BasicSword")
+    -- PlayerInv:EquipItem(itemStatus.Id, 1)
 end
 
 -- Builds an Empty Equipment Data

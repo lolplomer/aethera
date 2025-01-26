@@ -375,8 +375,6 @@ function CharacterClass:SetupStates()
 
     self.Cleaner:Connect(InputController.KeybindTriggered, function(Keybind, index)
         local State = States[Keybind]
-        
-        print(self.State)
 
         if 
             not State or 
@@ -1066,12 +1064,15 @@ function Module:Initialize(CharModel: Model)
     local params = RaycastParams.new()
     params.FilterDescendantsInstances = CharModel:GetChildren()
 
+    local Root = CharModel:WaitForChild("HumanoidRootPart")
+
+    Root:AddTag('MapMarker')
 
     local Character = setmetatable({
         Character = CharModel,
         Humanoid = Humanoid,
         Animator = Humanoid:WaitForChild"Animator",
-        Root = CharModel:WaitForChild("HumanoidRootPart"),
+        Root = Root,
         Active = true,
         Cleaner = Cleaner,
         State = nil,
