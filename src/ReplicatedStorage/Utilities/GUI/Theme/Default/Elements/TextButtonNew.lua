@@ -13,7 +13,7 @@ local color = Color3.fromHex("587291")
 return function(props)
     local selected = props.Selected or false
 
-    local buttonColor = selected and GuiUtil.MultiplyValue(color, 1.2) or color
+    local buttonColor = selected and GuiUtil.Color.MultiplyValue(color, 1.2) or color
 
     local styles, api = useSpring(function()
         return {

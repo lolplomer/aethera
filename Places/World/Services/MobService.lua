@@ -1,3 +1,5 @@
+local VISIBLE_ROOT_PART = false
+
 local CollectionService = game:GetService("CollectionService")
 local PathfindingService = game:GetService("PathfindingService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -6,6 +8,7 @@ local RunService = game:GetService("RunService")
 local Knit = require(ReplicatedStorage.Packages.Knit)
 local MobModule = require(ReplicatedStorage.GameModules.Mobs)
 local Trove = require(ReplicatedStorage.Packages.Trove)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local Tagger = require(ReplicatedStorage.Utilities.Tagger)
 
@@ -13,6 +16,7 @@ local Model = ReplicatedStorage.Models
 
 local Runtime = require(ReplicatedStorage.Utilities.Runtime)
 local RateLimiter = require(ReplicatedStorage.Madwork.RateLimiter)
+local FrequencyTracker = require(ReplicatedStorage.Utilities.FrequencyTracker)
 
 local Path = PathfindingService:CreatePath {
     AgentCanJump = false,
@@ -48,6 +52,11 @@ local Mobs = {}
 
 local packet = require(ReplicatedStorage.Packets.Mob)
 
+local PathfindingFrequency = FrequencyTracker.new()
+
+PathfindingFrequency:Watch(function(v)
+    workspace:SetAttribute("MOB_PATHFINDING_FREQUENCY", v)
+end)
 
 local function new(name, props)
     local instance = Instance.new(name)
@@ -69,42 +78,50 @@ end
 
 function Mob.new(module, level, id, CF)
     local StatService = Knit.GetService('StatService')
-    local model:Model = Model:FindFirstChild(module.Model)
-    if not model then
+    local modelTemplate:Model = Model:FindFirstChild(module.Model)
+    if not modelTemplate then
         return warn('Unknown model',module.Model)
     end
 
   --  print('creating new mob')
 
-    model = model:Clone()
+    -- model = model:Clone()
    
-    model:PivotTo(CF)
-    model.Parent = UnrenderedMobs
+    -- model:PivotTo(CF)
+    -- model.Parent = UnrenderedMobs
 
-    model.HumanoidRootPart.Anchored = true
+    -- model.HumanoidRootPart.Anchored = true
 
     
-    CollectionService:AddTag(model.HumanoidRootPart, 'Entity')
-    CollectionService:AddTag(model.HumanoidRootPart, 'Mob')
+    -- CollectionService:AddTag(model.HumanoidRootPart, 'Entity')
+    -- CollectionService:AddTag(model.HumanoidRootPart, 'Mob')
 
-    local modelSize = model:GetExtentsSize()
+    --local modelSize = model:GetExtentsSize()
 
-    model:SetAttribute('Module', module.Name)
+    local Root = new('Part', {
+        Size = Vector3.new(1,1,1),
+        Anchored = true,
+        Parent = workspace.Terrain,
+        CanCollide = false,
+        Material = 'Neon',
+        Transparency = VISIBLE_ROOT_PART and 0.5 or 1,
+        Name = module.Model
+    })
 
-    model:SetAttribute('Level', level)
+    
 
     local self = setmetatable({
         _cleaner = Trove.new(),
         id = id,
-        Stats = StatService:CreateMobStats(module.RawStats, level, model),
-        Model = model,
+        Stats = StatService:CreateMobStats(module.RawStats, level, Root),
+       -- Model = model,
         Position = CF.Position,
         SpawnPosition = CF.Position,
-        Humanoid = model:WaitForChild('Humanoid'),
+        --Humanoid = model:WaitForChild('Humanoid'),
         Movement = Runtime.new(),
         CFrame = CF,
-        Size = modelSize,
-        Root = model.HumanoidRootPart,
+        Size = modelTemplate:GetExtentsSize(),
+        --Root = model.HumanoidRootPart,
         Point = Vector3.new(),
         LookVector = Vector3.new(1,0,0),
         Active = false,
@@ -116,19 +133,21 @@ function Mob.new(module, level, id, CF)
     }, Mob)
 
     self._cleaner:Add(self.Stats)
-    self._cleaner:Add(self.Model)
+    --self._cleaner:Add(self.Model)
     self._cleaner:Add(self.Movement)
-    self._cleaner:AttachToInstance(model)
+    --self._cleaner:AttachToInstance(model)
+    
+    self.HealthChanged = self._cleaner:Construct(Signal)
 
-    self._cleaner:Connect(self.Humanoid.HealthChanged, function(health)
+    self._cleaner:Connect(self.HealthChanged, function(health)
         if health <= 0 and not self.Dead then
             self.Dead = true
 
             self:ChangeState()
             self.Movement:Stop()
 
-            self.Humanoid.Health = 0
             self.Root.CanQuery = false
+            self.Root:SetAttribute('Dead', true)
 
             local Formula = require(ReplicatedStorage.Utilities.Misc.StatFormula)
             local RewardExp = Formula.GetRewardEXP(self.Stats.Level, module.Exp)
@@ -136,53 +155,46 @@ function Mob.new(module, level, id, CF)
             self.Tagger:Distribute(function(playerCharacter: Player, scale: number)
                 local player = game.Players:GetPlayerFromCharacter(playerCharacter)
                 local exp = StatService:AddExp(player, RewardExp * scale)
-                print(player, `got exp`, exp, `for killing`, model, `{math.floor(scale*100)}% share`)
+                print(player, `got exp`, exp, `for killing`, modelTemplate, `{math.floor(scale*100)}% share`)
             end)
 
-            Knit.GetService('EffectService'):SpawnEffect('Death', {
-                Parent = self.Root
-            })
+            -- Knit.GetService('EffectService'):SpawnEffect('Death', {
+            --     Parent = self.Root
+            -- })
 
             task.delay(3, self.Destroy, self)
         end
     end)
 
-    self._cleaner:Add(function()
-        if model.Parent then
-            model:Destroy()
-        end
-    end)
-
-    local PositionPart = new('Part', {
-        Size = Vector3.new(1,1,1),
-        Anchored = true,
-        Parent = workspace.Terrain,
-        CanCollide = false,
-        Material = 'Neon',
-        Transparency = 1
-    })
-    new('ObjectValue', {Name = 'Mob', Parent = PositionPart, Value = model})
-
-    self._cleaner:Add(PositionPart)
-
-    PositionPart.Parent = MobPosition
-    PositionPart.Position = CF.Position
-
-    CollectionService:AddTag(PositionPart, 'MobPosition')
-
-    self.PositionPart = PositionPart
-
-    local _state = Enum.HumanoidStateType
-    local exclude = {_state.Dead, _state.None}
-
-    for _, state in Enum.HumanoidStateType:GetEnumItems() do
-        if table.find(exclude, state) then continue end
-        --print('disabling', state)
-        self.Humanoid:SetStateEnabled(state, false)
-    end
+    -- self._cleaner:Add(function()
+    --     if model.Parent then
+    --         model:Destroy()
+    --     end
+    -- end)
 
 
-    self.Movement:SetWaitTime(0.15)
+    --new('ObjectValue', {Name = 'Mob', Parent = PositionPart, Value = model})
+
+    self._cleaner:Add(Root)
+
+    Root.Position = CF.Position
+
+    CollectionService:AddTag(Root, 'MobPosition')
+
+    self.PositionPart = Root
+    self.Root = Root
+
+    -- local _state = Enum.HumanoidStateType
+    -- local exclude = {_state.Dead, _state.None}
+
+    -- for _, state in Enum.HumanoidStateType:GetEnumItems() do
+    --     if table.find(exclude, state) then continue end
+    --     --print('disabling', state)
+    --     self.Humanoid:SetStateEnabled(state, false)
+    -- end
+
+
+    self.Movement:SetWaitTime(0.05)
 
     self.Movement.Changed:Connect(function(position, point, name)
 
@@ -195,7 +207,7 @@ function Mob.new(module, level, id, CF)
         self.OnSpawnPoint = false
         self:ChangeState(name, false)
 
-        PositionPart.Position = position
+        --Root.CFrame = CFrame.lookAlong(position, self.LookVector)
 
         -- if MovementRateLimiter:CheckRate('Global') then
         --     self:SetPosition(position)  
@@ -205,26 +217,53 @@ function Mob.new(module, level, id, CF)
 
     self.Movement.Completed:Connect(function()
         task.wait(0.1)
-        self:ChangeState()
+        if self.Movement.IsPlaying == false then
+            self:ChangeState()    
+        end
     end)
 
     local params = RaycastParams.new()
     params.FilterType = Enum.RaycastFilterType.Exclude
-    params.FilterDescendantsInstances = MobFolder:GetChildren()
+    params.FilterDescendantsInstances = {MobPosition, CollectionService:GetTagged('Character')}
 
     self.RaycastParams = params
 
     self:InitiateStats()
-    self:InitiateHumanoid()
+    --self:InitiateHumanoid()
     self:ChangeState()
-    self:InitiateCollisions()
+    --self:InitiateCollisions()
     self:InitiateActions()
 
+    for prop, value in self.Module.Humanoid do
+        self:Set(prop,value)
+    end
+
+    self.Root:SetAttribute('Module', module.Name)
+    self.Root:SetAttribute('Level', level)
+
+    Root.Parent = MobPosition
     return self
 end
 
+function Mob:Set(attribute, value)
+    self.Root:SetAttribute(attribute, value)
+end
 
+function Mob:TakeDamage(value)
+    self:SetHP(self:Get('HP') - value)
+end
 
+function Mob:SetHP(value)
+    local max = self:Get("MaxHP")
+    self:Set('HP', math.clamp(value, 0, max))
+    self.HealthChanged:Fire(value, max)
+end
+
+function Mob:Get(attribute)
+    return self.Root:GetAttribute(attribute)
+end
+
+--[[
 function Mob:InitiateHumanoid()
     if self.Module.Humanoid then
         for property, value in self.Module.Humanoid do
@@ -244,6 +283,7 @@ function Mob:InitiateCollisions()
         end
     end
 end
+]]
 
 function Mob:CastSingleTargetAttack(boxSize, length, desiredTarget, damageModifier)
     local size = Vector3.new(boxSize,boxSize,1)
@@ -268,21 +308,22 @@ function Mob:CastSingleTargetAttack(boxSize, length, desiredTarget, damageModifi
         local CombatService = Knit.GetService('CombatService')
         local TargetChar = raycastResult.Instance.Parent
         
-        CombatService:DealDamage(TargetChar, self.Model, damageModifier)
+        CombatService:DealDamage(TargetChar, self.Root, damageModifier)
 
         return raycastResult
     end
 end
 
 function Mob:InitiateStats()
-    local Humanoid: Humanoid = self.Humanoid
 
     local function HealthChanged()
-        local scale = Humanoid.Health / Humanoid.MaxHealth
+        local current, max = self:Get('HP'), self:Get('MaxHP')
+        local scale = current and (current / max) or 1
         local HP = self.Stats:Get('HP')
         
-        Humanoid.MaxHealth = HP
-        Humanoid.Health = HP * scale
+        self:Set('MaxHP', HP)
+        
+        self:SetHP(HP * scale)
     end
 
     HealthChanged()
@@ -294,12 +335,12 @@ function Mob:ChangeState(newState, update)
     newState = newState or 'None'
     if self.State ~= newState then
         self.State = newState
-        self.Model:SetAttribute('State', newState)
+        self.Root:SetAttribute('State', newState)
 
         if update ~= false then
 
             for player in self.Players do
-                packet.State.sendTo({State = newState, Model = self.Model}, player)        
+                packet.State.sendTo({State = newState, Model = self.Root}, player)        
             end
 
             
@@ -316,20 +357,19 @@ function Mob:SetPosition(position, direction, instant)
     self.Position = position or self.Position
     self.LookVector = direction or self.LookVector
 
-    for player in self.Players do
-        packet.CFrame.sendTo({
-            At = self.Position,
-            Direction = self.LookVector,
-            Model = self.Model,
-            State = self.State,
-            Instant = instant
-        }, player)
+    if instant then
+        for player in self.Players do
+            packet.CFrame.sendTo({
+                At = self.Position,
+                Direction = self.LookVector,
+                Model = self.Root,
+                State = self.State,
+                Instant = instant
+            }, player)
+        end
     end
-    
 
-    if self.PositionPart then
-        self.PositionPart.Position = self.Position
-    end
+    self.Root.CFrame = CFrame.lookAlong(self.Position, self.LookVector)
 end
 
 function Mob:TeleportToSpawn()
@@ -365,6 +405,10 @@ end
 function Mob:Destroy()
     self._cleaner:Destroy()
 end
+  
+function Mob:UpdateParamsFilter()
+	self.RaycastParams.FilterDescendantsInstances = {MobPosition, CollectionService:GetTagged('Character')}
+end
 
 function Mob:MoveTo(position: Vector3)
     if self.Dead then return end
@@ -372,8 +416,10 @@ function Mob:MoveTo(position: Vector3)
     local _dist = (self.Position - position).Magnitude
     if _dist < 5 then return end
 
-    local dir = (position - self.Position).Unit * (_dist - 3)
+    local dir = (position - self.Position).Unit * (_dist)
+    self:UpdateParamsFilter()
     local result = workspace:Blockcast(CFrame.new(self.Position), self.Size, dir, self.RaycastParams)
+    print(result and result.Instance.Parent)
     if result and result.Instance then
 
         if self.Computing then return end
@@ -385,9 +431,12 @@ function Mob:MoveTo(position: Vector3)
         
         local success, e = pcall(function()
             self.Computing = true
+            PathfindingFrequency:Tick()
             Path:ComputeAsync(_pos, position)
             self.Computing = false
         end)
+
+        print('Computed Path')
     
         if success then
             if Path.Status == Enum.PathStatus.Success then
@@ -405,7 +454,7 @@ function Mob:MoveTo(position: Vector3)
                         dist = (waypoint.Position - prev.Position).Magnitude
                     end
     
-                    local duration = dist/self.Humanoid.WalkSpeed
+                    local duration = dist/self:Get('WalkSpeed')
 
                     local pos = waypoint.Position + Vector3.new(0,2.4,0)
     
@@ -434,7 +483,7 @@ function Mob:MoveTo(position: Vector3)
     else
         self.Continuous = false
         local dist = (self.Position - position).Magnitude
-        local duration = dist/self.Humanoid.WalkSpeed
+        local duration = dist/self:Get('WalkSpeed')
         local keyframes = {
             Runtime.newKeyframe(0, self.Position, 'Running'),
             Runtime.newKeyframe(duration, position, 'Running')
@@ -449,13 +498,14 @@ end
 
 function Mob:IsExist()
     --print(self.Model, self.Model and self.Model.Parent, self.Model and self.Model:IsDescendantOf(workspace))
-    return self.Model and self.Model:FindFirstChild('HumanoidRootPart')
+    --return self.Model and self.Model:FindFirstChild('HumanoidRootPart')
+    return self.Root:IsDescendantOf(workspace)
 end
 
 function Mob:PlayAnimation(name, category)
     for player in self.Players do
         packet.Animation.sendTo({
-            Model = self.Model,
+            Model = self.Root,
             Animation = name,
             Category = category
         }, player)
@@ -474,7 +524,7 @@ function Mob:CheckActive()
             Active = true
         else
             --print('unrendering on server...')
-            packet.Unrender.sendTo(self.Model, player)
+            packet.Unrender.sendTo(self.Root, player)
             self.Players[player] = nil
         end
     end
@@ -538,7 +588,7 @@ function Mob:Activate()
             self:TeleportToSpawn()
 
             for player in self.Players do
-                packet.Unrender.sendTo(self.Model, player)
+                packet.Unrender.sendTo(self.Root, player)
                 self.Players[player] = nil
             end
 
@@ -558,10 +608,12 @@ function Mob:Activate()
                 if self.Dead then return end
 
                 if not self.Target then
-                    self.Target = self:GetFirstPlayer(30)
+                    self.Target = self:GetFirstPlayer(40)
                 else
                     if self.Target.Character.Humanoid.Health <= 0 then
                         self.Target = nil
+                        task.wait(1)
+                        self:MoveTo(self.SpawnPosition)
                         return
                     end
                     local Pos = self.Target.Character:GetPivot().Position
@@ -575,7 +627,7 @@ function Mob:Activate()
                                 if (os.clock() - actionInfo.LastTrigger) > (action.Cooldown or 1) then
                                     actionInfo.LastTrigger = os.clock()
                                     if not action.TargetMinimumDistance or distance <= action.TargetMinimumDistance then
-                                        self:DispatchAction(i)
+                                        self:DispatchAction(i);
                                     end
                                 end
                             end
@@ -584,8 +636,8 @@ function Mob:Activate()
                         if distance > 7 then
                             local lv = self:Direction(Pos)
                             local rv = lv:Cross(Vector3.new(0,1,0))
-                            local pow = (math.noise(os.clock()/5,10,self.Seed) * 10)
-                            self:MoveTo(Pos - lv * math.random(3,4) + rv * pow)
+                            local pow = (math.noise(os.clock()/5,10,self.Seed) * 15)
+                            self:MoveTo(Pos - lv * math.random(3,6) + rv * pow)
                         else
                             --actions
                             self:SetDirection(self:Direction(Pos))
@@ -619,9 +671,9 @@ function MobService:Spawn(MobName, Level, CF)
       --  print(mob, Mob)
         mob._cleaner:Add(function()
             print('Mob Deleted')
-            Mobs[mob.Model] = nil
+            Mobs[mob.Root] = nil
         end)
-        Mobs[mob.Model] = mob
+        Mobs[mob.Root] = mob
 
         return mob
     end
@@ -654,8 +706,8 @@ function MobService:KnitStart()
 end
 
 function MobService:KnitInit()
-    packet.Render.listen(function(model, player: Player)
-        local Mob = MobService:GetMobData(model)
+    packet.Render.listen(function(root, player: Player)
+        local Mob = MobService:GetMobData(root)
         if not Mob then return end
         
         --print(Mob.Players[player], Mob.Players, Mob.Active)
@@ -664,7 +716,7 @@ function MobService:KnitInit()
         if Mob:Distance(Char:GetPivot().Position) < MobService.ActiveDistance then
             --print('Activating Mob', Mob.Active)
 
-            packet.Render.sendTo(model, player)
+            packet.Render.sendTo(root, player)
 
             Mob.Players[player] = true
             Mob:Activate()

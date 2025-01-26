@@ -39,4 +39,14 @@ settings.Markers = {
     }
 }
 
+settings.AbsoluteCenterPosition = Vector2.new()
+
+do
+    local sum = Vector2.new()
+    for _, v in settings.MapImages do
+        sum += v.Center
+    end
+    settings.AbsoluteCenterPosition = sum / #settings.MapImages
+end
+
 return settings

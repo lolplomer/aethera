@@ -1,6 +1,8 @@
 local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local StarterPlayer = game:GetService("StarterPlayer")
+local UserInputService = game:GetService("UserInputService")
 local Packages = ReplicatedStorage:WaitForChild"Packages"
 local Trove = require(Packages:WaitForChild"Trove")
 local BridgeNet2 = require(Packages:WaitForChild("bridgenet2"))
@@ -33,7 +35,8 @@ CharacterClass.__index = CharacterClass
 
 local StateChanged = BridgeNet2.ReferenceBridge("StateChanged")
 
-local DEFAULT_WALKSPEED = 16
+local DEFAULT_WALKSPEED = StarterPlayer.CharacterWalkSpeed
+local DEFAULT_JUMP_POWER = StarterPlayer.CharacterJumpPower
 
 local CombatService
 
@@ -100,10 +103,10 @@ function CharacterClass:ResetWeaponAnimations()
     end
 
     self.WeaponSubtype = Subtype
-    self:RefreshPlayingTracks()
 
-   -- print('Resetted Weapon Animations')
+    
     self.AnimTrove = AnimTrove
+
 
     for _,v in States do
         if v.WeaponAnimationReset then
@@ -115,10 +118,12 @@ function CharacterClass:ResetWeaponAnimations()
         self:CancelAction()
     end
 
+    --task.delay(0.04, self.RefreshPlayingTracks, self)
+    self:RefreshPlayingTracks()
 end
 
 function CharacterClass:IsMoving()
-    return self.Humanoid.MoveDirection.Magnitude > 0
+    return self.Humanoid.MoveDirection.Magnitude > 0;
 end
 
 function CharacterClass:RefreshPlayingTracks()
@@ -145,11 +150,12 @@ function CharacterClass:SetupAnimations()
     self.Cleaner:Connect(Humanoid.Running, function(speed)
         self:PlayWeaponTrack(speed > 0 and 'Running' or 'Idle', nil, true)
     end) 
+
 end
 
 function CharacterClass:StopTrack(Category)
     Category = Category or 'Default'
-
+    -- print('Stopping track',Category, '\n', debug.traceback())
     if self.PlayingTracks[Category] then
         self.PlayingTracks[Category]:Stop()
         self.PlayingTracks[Category] = nil
@@ -160,13 +166,6 @@ function CharacterClass:GetTrack(Track, TrackName)
     TrackName = TrackName or 'General'
 
     local Tracks = self.Tracks[TrackName]
-    -- if Tracks and Tracks[Track].IsPal then
-    --     return Tracks[Track] 
-    -- end
-
-    --self:StopTrack(Category)
-    
-    --print(Track, Tracks, Tracks[Track])
     if Tracks and Tracks[Track] then
         
       
@@ -188,8 +187,8 @@ function CharacterClass:PlayTrack(Track, Category, Looped, TrackName)
         if Looped then
             _track.Looped = true
         end
-        self.PlayingTracks[Category] = _track
-        
+        self.PlayingTracks[Category] = _track  
+
         return _track
     end
 end
@@ -200,8 +199,9 @@ end
 
 
 function CharacterClass:CancelAction(_state)
+    
+    warn(_state, '===', self.State, self.StatePromise)
     if self.StatePromise then
-        print(_state, self.State)
         if _state and self.State ~= _state then return end
 
         self.StatePromise:cancel()
@@ -264,9 +264,11 @@ function CharacterClass:ChangeState(newState, index)
     index = index or 1
     local State = States[newState]
 
+    warn(self.State, self.StatePromise, newState)
     if self.CD[newState] and os.clock() < self.CD[newState] then
         return
     end
+
 
     if newState ~= self.State then
         if self.ChainedPromise then
@@ -280,6 +282,8 @@ function CharacterClass:ChangeState(newState, index)
       --  print('Attempted to trigger same state simultaneously, requests:',self.Request)
         return
     end
+
+    warn('Proceeding new state')
 
     local NewStateApplied = false
     if self.State and self.StatePromise then
@@ -344,7 +348,6 @@ function CharacterClass:ChangeState(newState, index)
             if current then
                 current:cancel()    
             end
-            
             if self.State == newState then
                 local awaitingStates = self.AwaitingStates
                 self:SetState(awaitingStates.State, awaitingStates.StateIndex)
@@ -355,6 +358,7 @@ function CharacterClass:ChangeState(newState, index)
         end)
 
         self.StatePromise = chained
+
     end
 
 end
@@ -371,6 +375,8 @@ function CharacterClass:SetupStates()
 
     self.Cleaner:Connect(InputController.KeybindTriggered, function(Keybind, index)
         local State = States[Keybind]
+        
+        print(self.State)
 
         if 
             not State or 
@@ -382,6 +388,7 @@ function CharacterClass:SetupStates()
             return
         end
         self.StateExecutionCooldown = os.clock() + (State.DelayAfter or 0)
+
 
         self:ChangeState(Keybind, index)
     end)
@@ -586,8 +593,8 @@ function CharacterClass:InitiateClimbing()
         NoCollision.Parent = self.Root
         NoCollision.Part0 = self.Root
 
-        local AutoRotate = PriorityHumanoid:Add('AutoRotate', false, 1)
- 
+        --local AutoRotate = PriorityHumanoid:Add('AutoRotate', false, 1)
+        local AutoRotate = self.Props.AutoRotate:Add(false)
         self.Climbing = true
 
         Anim:Play()
@@ -830,8 +837,8 @@ function CharacterClass:InitiateClimbingMechanic()
         Orientation.RigidityEnabled = false
 
         SetCanCollide(false)
-        local AutoRotate = PriorityHumanoid:Add('AutoRotate', false, 1)
-        
+        --local AutoRotate = PriorityHumanoid:Add('AutoRotate', false, 1)
+        local AutoRotate = self.Props.AutoRotate:Add(false)
         ActiveClimbTrove:Add(Orientation)
         ActiveClimbTrove:Add(AutoRotate,'Dispose')
         ActiveClimbTrove:Add(Position)
@@ -1047,6 +1054,7 @@ function Module:Initialize(CharModel: Model)
     local PriorityHandler = Priority:GetHandler(Humanoid)
 
     PriorityHandler:SetDefaultValue('WalkSpeed', DEFAULT_WALKSPEED)
+    PriorityHandler:SetDefaultValue('JumpPower', DEFAULT_JUMP_POWER)
     PriorityHandler:SetTweenInfo(TweenInfo.new(0.5,Enum.EasingStyle.Quart,Enum.EasingDirection.InOut)) 
 
     local camera = Priority:GetHandler(workspace.CurrentCamera)
@@ -1096,6 +1104,11 @@ function Module:Initialize(CharModel: Model)
         StaminaChanged = SignalTrove:Construct(signal),
 
         RaycastParams = params,
+
+        Props = Priority:GetHandler {
+            AutoRotate = true;
+        }
+
     }, CharacterClass)
 
     Cleaner:Add(function()
@@ -1140,6 +1153,9 @@ function Module:Initialize(CharModel: Model)
     --Character:InitiateClimbing()
     Character:InitiateClimbingMechanic()
     print('Character Initialized')
+
+
+    task.delay(0.03, Character.RefreshPlayingTracks, Character)
 
     return Character
 end

@@ -1,10 +1,18 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Knit = require(ReplicatedStorage.Packages.Knit)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local CharacterService = Knit.CreateService {
     Name = "CharacterService",
     Client = {},
 }
+
+CharacterService.CharacterLoaded = Signal.new()
+
+function CharacterService:LoadCharacter(player: Player)
+    player:LoadCharacter()
+    CharacterService.CharacterLoaded:Fire(player.Character, player)
+end
 
 function CharacterService:Spawn(player: Player)
     if player:GetAttribute('Spawned') then
@@ -15,11 +23,11 @@ function CharacterService:Spawn(player: Player)
         local humanoid = character:WaitForChild('Humanoid')
         humanoid.Died:Connect(function()
             task.wait(2)
-            player:LoadCharacter()
+            self:LoadCharacter(player)
         end)
     end)
 
-    player:LoadCharacter()
+    self:LoadCharacter(player)
 end
 
 function CharacterService:KnitStart()

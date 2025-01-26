@@ -6,10 +6,12 @@ local States = {}
 local Knit = require(ReplicatedStorage.Packages.Knit)
 
 local Promise = require(ReplicatedStorage:WaitForChild("Utilities"):WaitForChild("Promise"))
-local Priority = require(ReplicatedStorage.Utilities:WaitForChild"Priority")
+local Priority = require(ReplicatedStorage.Utilities.Priority)
 local Trove = require(ReplicatedStorage.Packages.Trove)
 
 local Util = require(ReplicatedStorage.Utilities.Util)
+
+local NO_ACTION = function()end
 
 States.Attack = {
     Keys = {
@@ -20,6 +22,11 @@ States.Attack = {
     AcceptedRequestAmount = 4,
     CancelOnWeaponChange = true,
     CancelOnJump = true,
+    MobileButton = {
+        Icon = "",
+        Position = UDim2.fromScale(1, 0.5),
+        AnchorPoint = Vector2.new(1, 0.5)
+    },
     Init = function(Character)
         Character.UserData.LastAttack = os.clock()
         Character.UserData.M1Timing = {}
@@ -58,6 +65,8 @@ States.Attack = {
 
         local track:AnimationTrack
         local cancelled = false
+
+        local ShakeController =  Knit.GetController('ShakeController')
         return Promise.new(function(resolve)
 
             local userdata = Character.UserData
@@ -88,6 +97,7 @@ States.Attack = {
 
                 if t[3] == 'lunge' then
                     task.delay(t[4] or 0, function()
+                        ShakeController:Start("Lunge")
                         if cancelled then return end
                         Knit.GetController('EffectClient'):SpawnEffect('Lunge', {
                             CFrame = Character.Root.CFrame * CFrame.new(-1, 0, 3.2),
@@ -96,6 +106,7 @@ States.Attack = {
                     end)
                 elseif t[3] then
                     task.delay(t[6] or 0, function()
+                        --ShakeController:Start(t[3] and "SwingLeft" or "SwingRight")
                         if cancelled then return end
                         Knit.GetController('EffectClient'):SpawnEffect('Slash-02', {
                             Parent = Character.Root,
@@ -135,7 +146,7 @@ States._character = {
         local function lerp(a,b,t)
             return a+(b-a)*t
         end
-         local humanoid = self.Humanoid
+         local humanoid:Humanoid = self.Humanoid
 
         local tiltEnabled = true
 
@@ -148,6 +159,13 @@ States._character = {
 
         local tiltZ = 0
         local tiltX = 0
+        local ShakeController =  Knit.GetController('ShakeController')
+        local lastHealth = humanoid.Health
+        cleaner:Connect(humanoid.HealthChanged, function(health)
+            if health < lastHealth then
+                ShakeController:Start(math.random(1,2)==1 and "Hit1" or "Hit2")
+            end
+        end)
 
         cleaner:BindToRenderStep("CharacterTilt", Enum.RenderPriority.First.Value, function(dt)
             local ws = humanoid.WalkSpeed
@@ -166,17 +184,65 @@ States._character = {
             end
             root6D.C1 = defaultC1 * CFrame.Angles(tiltX,0,tiltZ)
         end)
+
+        humanoid.AutoRotate = false
+
+        cleaner:Connect(humanoid:GetPropertyChangedSignal("AutoRotate"), function()
+            if humanoid.AutoRotate == true then
+                warn("Humanoid AutoRotate is Disabled. Please instead use CharacterController:GetCharacter().Props.AutoRotate")
+            humanoid.AutoRotate = false
+            end
+            
+        end)
+
+        local MouseLockController = Knit.GetController("MouseLockController")
+        local LoadingController = Knit.GetController('LoadingController')
+
+        local function GetCameraLookVector()
+            local CameraCF: CFrame = workspace.CurrentCamera.CFrame
+    
+            return -CameraCF.RightVector:Cross(Vector3.yAxis)
+        end
+
+        local function Look()
+            return CFrame.lookAlong(root.Position, GetCameraLookVector())
+        end
+
+        local Orientation:AlignOrientation = self:AlignOrientation(Look())
+        Orientation.Responsiveness = 40
+
+
+        cleaner:Connect(RunService.RenderStepped, function(dt)
+            self.Character:SetAttribute("AutoRotate",self.Props.AutoRotate:Get())
+            Orientation.Enabled = self.Props.AutoRotate:Get() 
+
+            if Orientation.Enabled then
+                local MoveDir = humanoid.MoveDirection
+                if MouseLockController:GetIsMouseLocked() == true or LoadingController.Enabled then                    
+                    Orientation.CFrame = Look()    
+                elseif MoveDir.Magnitude > 0 then
+                    Orientation.CFrame = Orientation.CFrame:Lerp(CFrame.lookAlong(root.Position,MoveDir), .3)
+                    
+                end
+
+            end
+            
+        end)
+
+        print(self.Props, self.Props.AutoRotate._instance)
+
     end
 }
 
 States.Busy = {
     Keys = {},
     Trigger = function(Character)
-        local Value = Priority.Set(Character.Humanoid, 'WalkSpeed', 0, 1)
-        return Promise.new(function()
-            
-        end):finally(function( )
-            Value:Dispose()
+        local WalkSpeed = Priority.Set(Character.Humanoid, 'WalkSpeed', 0, 0)
+        local JumpPower = Priority.Set(Character.Humanoid, 'JumpPower', 0, 0)
+
+        return Promise.new(NO_ACTION):finally(function( )
+            WalkSpeed:Dispose()
+            JumpPower:Dispose()
         end)
     end,
     Disturbable = false
@@ -195,12 +261,14 @@ States.Sprint = {
     Trigger = function(Character)
 
         local StatsClient = Knit.GetController('StatsClient')
+        local ShakeController =  Knit.GetController('ShakeController')
         local MOVSPD = StatsClient:Get('MOVSPD')
         local Value = Priority.Set(Character.Humanoid, 'WalkSpeed', 28 * MOVSPD, 1)
         local FOV = Priority.Set(workspace.CurrentCamera, 'FieldOfView', 85)
 
-        local AutoRotate = Character.PriorityHumanoid:Add('AutoRotate',false,1)
-
+        --local AutoRotate = Character.PriorityHumanoid:Add('AutoRotate',false,1)
+        local AutoRotate = Character.Props.AutoRotate:Add(false)
+        --warn("SPRINT AUTOROTATE:",AutoRotate:GetValue())
         local Dash = Character:PlayTrack('Dash', 'Action')
         local Run: AnimationTrack = Character:GetTrack('Run')
         local Time = .15
@@ -220,6 +288,7 @@ States.Sprint = {
 
         _runTrove:Add(function()
             
+            ShakeController:Stop('Running')
             
             Run:Stop()
             AutoRotate:Dispose()
@@ -238,10 +307,11 @@ States.Sprint = {
 
         return Promise.new(function()
 
+
             local movedir = Character.Humanoid.MoveDirection
         
             humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
-            humanoid.AutoRotate = false
+            --humanoid.AutoRotate = false
 
             local dir = humanoid.MoveDirection
 
@@ -261,17 +331,19 @@ States.Sprint = {
                 dir = rightVector:Cross(upVector) * moveVector.Z + rightVector * moveVector.X
             end
 
-            print(dir)
-
             Mover = Character:AddVelocity(dir * 100 * MOVSPD,Time)
             
             Rotater = Character:AlignOrientation(CFrame.lookAlong(Character.Root.Position, dir), Time + 0.2)
 
             task.delay(Time, function()
                 if not Done then
+                    
+                    
+
                     if Character:IsMoving() then
                         if humanoid:GetState() == Enum.HumanoidStateType.Running then
                             Run:Play()    
+                            ShakeController:Start("Running")
                         end
                     else
                         Character:CancelAction(State)
@@ -286,9 +358,13 @@ States.Sprint = {
                             return _runTrove:Destroy()
                         end
                         if new == Enum.HumanoidStateType.Freefall then
+                            
+                            ShakeController:Stop('Running')
                             Run:Stop()
                         elseif new ==  Enum.HumanoidStateType.Landed then
                             Run:Play()
+                    
+                            ShakeController:Start('Running')
                             Run:AdjustSpeed(1.25 * MOVSPD)
                         end
                     end)

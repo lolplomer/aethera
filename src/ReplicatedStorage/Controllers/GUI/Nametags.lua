@@ -41,7 +41,8 @@ function NametagClass.new(Entity)
     Billboard.Adornee = Entity
     Billboard.StudsOffset = Vector3.new(0,0,-3)
     Billboard.PlayerToHideFrom = game.Players:GetPlayerFromCharacter(self.Character)
-
+    Billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    
     local root = ReactRoblox.createRoot(Billboard)
 
     --root:render(GUI.newElement('Nametag', {Enabled = true}))

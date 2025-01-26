@@ -14,8 +14,17 @@ return {
     
     Component = function(props)
 
+        print('Updating Weapon Radial')
+
+        local updateCounter, update = roact.useState(0)
+
         roact.useEffect(function()
             local _trove = trove.new()
+
+            _trove:Connect(InvController.EquipmentChanged, function()
+                update(updateCounter + 1)
+            end)
+
             return _trove:WrapClean()
         end)
 

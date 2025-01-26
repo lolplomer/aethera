@@ -159,6 +159,9 @@ function Runtime:Destroy()
 end
 
 function Runtime:Interpolate(timePosition)
+
+    debug.profilebegin("RuntimeInterpolating")
+
     local before, after
     for i = 1, #self.Keyframes - 1 do
         if self.Keyframes[i][1] <= timePosition and self.Keyframes[i+1][1] >= timePosition then
@@ -182,6 +185,8 @@ function Runtime:Interpolate(timePosition)
     end
 
     local alpha = (timePosition - before[1]) / (after[1] - before[1])
+
+    debug.profileend()
     --print(alpha)
     return before[2] + alpha * (after[2] - before[2]), after[2], before[3]
 end

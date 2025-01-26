@@ -128,6 +128,7 @@ function CombatService:KnitInit()
 
             CollectionService:AddTag(character:WaitForChild('HumanoidRootPart'), 'Entity')
             CollectionService:AddTag(character.HumanoidRootPart, 'Player')
+            CollectionService:AddTag(character, 'Character')
 
             local humanoid: Humanoid = character:WaitForChild('Humanoid')
 
@@ -220,7 +221,13 @@ function CombatService:DealDamage(TargetChar, AttackerChar, ModifierDamage)
     local TargetInfo = CombatService:GetRequiredDamageInfo(TargetChar)
 
     local damage, crit = CombatService:CalculateFinalDamage(TargetInfo.Stats, AttackerInfo.Stats, ModifierDamage)
-    TargetChar.Humanoid:TakeDamage(damage)
+
+    if TargetInfo.Mob then
+        TargetInfo.Mob:TakeDamage(damage)
+    else
+        TargetChar.Humanoid:TakeDamage(damage)
+    end
+    
 
     self:SpawnHitDamage(damage, TargetInfo.Position, crit)
 
@@ -232,29 +239,39 @@ function CombatService:DealDamage(TargetChar, AttackerChar, ModifierDamage)
 end
 
 function CombatService:GetRequiredDamageInfo(target)
-    local root = target.HumanoidRootPart
+    --local root = target.HumanoidRootPart
     local player = game.Players:GetPlayerFromCharacter(target)
 
     local targetStats, tagger, position
+
+    local Info
     
     if player then
-        position = root.Position
+        position = target.HumanoidRootPart.Position
         targetStats = StatService:GetStats(player)
         tagger = CombatService:GetTagger(player)
-    
+        Info = {
+            Stats = targetStats,
+            Tagger = tagger,
+            Position = position
+        };
     else
         local MobService = Knit.GetService('MobService')
         local mob = MobService:GetMobData(target)
-        position = mob.Position
+
+        position = mob.Root.Position
         targetStats = mob.Stats
         tagger = mob.Tagger
+
+        Info = {
+            Stats = targetStats,
+            Tagger = tagger,
+            Position = position,
+            Mob = mob,
+        }
     end
 
-    return {
-        Stats = targetStats,
-        Tagger = tagger,
-        Position = position
-    }
+    return Info
 end
 
 function CombatService:SpawnHitDamage(Damage, Position, Crit)

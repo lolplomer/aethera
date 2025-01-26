@@ -35,6 +35,10 @@ return function (props)
         }
     end) 
 
+    local transparency, transparencyApi = ReactSpring.useSpring(function()
+        return {alpha = 0}
+    end)
+
     -- local playerStats
     -- if CollectionService:HasTag(char.HumanoidRootPart, 'Mob') then
     --     playerStats = MobClient:GetMob(char):GetStats()
@@ -54,6 +58,9 @@ return function (props)
         local conn = Trove.new()
 
         conn:Connect(humanoid.HealthChanged, function(health)
+            if health <= 0 then
+                transparencyApi.start {alpha = 1}
+            end
             api.start (function()
                 return {
                     from =  {transparency = 0},
@@ -80,9 +87,10 @@ return function (props)
         return conn:WrapClean()
     end)
 
-    return Roact.createElement('Frame', {
+    return Roact.createElement('CanvasGroup', {
         Size = UDim2.fromScale(1,1),
-        BackgroundTransparency = 1
+        BackgroundTransparency = 1,
+        GroupTransparency = transparency.alpha
     }, {
 
         Label = GUI.newElement('TextLabel', {

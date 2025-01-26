@@ -30,6 +30,15 @@ local Window = require(ReplicatedStorage.Utilities.GUI:WaitForChild"WindowManage
 local mapComponent = GUI.GetComponent('Map')
 local player = game.Players.LocalPlayer
 
+local function GetViewBoundary(position: Vector2)
+    local viewport = workspace.CurrentCamera.ViewportSize
+    local scale = Vector2.new(position.X,position.Y)/viewport
+    local sequence = Vector2.new(math.floor(scale.X), math.floor(scale.Y))
+    local result = viewport * sequence
+   -- print(result, "| sequence: ", sequence, "| scale: ", scale)
+    return Vector3.new(result.X,result.Y)
+end
+
 function Map:init()
     self.MapFrame = roact.createRef()
     self._component:setState{MapScale = 3}
@@ -83,14 +92,24 @@ function Map:didUpdate(_,prevState)
     
             local MapFrame = self.MapFrame:getValue()
             local ABS = MapFrame.Parent.AbsoluteSize
-    
-            local cf = char:GetPivot()
+            local init = MapSettings.InitialPosition
+            local initVector3 = Vector3.new(init.X,init.Y,0)
+
+            local cf = char:GetPivot() 
             local x,y = cf.Position.X, cf.Position.Z
+            local Anchor = Vector2.new()
     
            
+            -- local Pos = Vector3.new(
+            --     ABS.X/2 - x, 
+            --     ABS.Y/2 - y,
+            --     0
+            -- )
+
+            local center = Vector3.new(ABS.X/2,ABS.Y/2)
             local Pos = Vector3.new(
-                ABS.X/2 - x, 
-                ABS.Y/2 - y,
+                center.X-x+init.X/2,
+                center.Y-y+init.Y/2,
                 0
             )
             Map._component:setState{MapScale = 1}
@@ -102,6 +121,18 @@ function Map:didUpdate(_,prevState)
             local Holding
     
             local prevPos = nil
+
+
+            local function UpdatePos(newPos)
+                if newPos then
+                    Pos = newPos                       
+                end
+
+                
+                TweenService:Create(MapFrame,tweenInfo, {Position = UDim2.fromOffset(Pos.X,Pos.Y)}):Play()
+                --MapFrame.Position = UDim2.fromOffset(Pos.X,Pos.Y)
+            end
+
             self.Cleaner:Connect(UIS.InputBegan, function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     Holding = true
@@ -120,6 +151,8 @@ function Map:didUpdate(_,prevState)
                     local scale = self.state.MapScale
                     local mapPos = mapComponent:ToMapPosition(input.Position, scale, mapFrame)
                     local worldPos = mapComponent:ToWorldPosition(mapPos, scale)
+
+                    --UpdatePos(Vector3.new(mapPos.X,mapPos.Y))
                     
                     local function Done()
                         GUI:ClosePopup'AddMarker'
@@ -154,22 +187,24 @@ function Map:didUpdate(_,prevState)
                 end
             end)
     
-            local function UpdatePos(newPos)
-                Pos = newPos
-                TweenService:Create(MapFrame,tweenInfo, {Position = UDim2.fromOffset(Pos.X,Pos.Y)}):Play()
-                --MapFrame.Position = UDim2.fromOffset(Pos.X,Pos.Y)
-            end
     
            -- local prevScale = 1
             self.Cleaner:Connect(UIS.InputChanged, function(input:InputObject)
+             
                 if Holding and input.UserInputType == Enum.UserInputType.MouseMovement then
                     if not prevPos then
                         prevPos = input.Position
                     end
                     
+                    
+
                     --MapFrame.Position = UDim2.fromOffset(Pos.X,Pos.Y)
                     UpdatePos(Pos + input.Position - prevPos)
-                    print(self.state.SelectPosition)
+
+
+
+                    --GetViewBoundary(Pos)
+                   -- print(GetViewBoundary(Pos))
                     --TWS:Create(MapFrame, TWInfo, {Position = UDim2.fromOffset(Pos.X,Pos.Y)   }):Play()
                     --MapFrame.Position = UDim2.fromOffset(Pos.X,Pos.Y)      
     
@@ -177,17 +212,39 @@ function Map:didUpdate(_,prevState)
                 elseif input.UserInputType == Enum.UserInputType.MouseWheel then
                     local wheel = input.Position.Z
                     local prev = self.state.MapScale
-                    Map._component:setState {
-                        MapScale = math.clamp(self.state.MapScale + wheel/4,0.25,5)
-                    }
-    
-                    if prev ~= self.state.MapScale then
-                       -- local viewport = workspace.CurrentCamera.ViewportSize
-                        local delta = (Pos - input.Position) * wheel/(4*(self.state.MapScale))
-                        UpdatePos(Pos + delta)
-                    end
+                    local new =math.clamp(self.state.MapScale + wheel/4,0.15,5)
                     
-                
+                    Map._component:setState {
+                        MapScale = new
+                    }
+                    
+                       
+                       --local delta = (Pos - input.Position) * wheel/(4*(self.state.MapScale))
+                       --print(prev,Map._component.state.MapScale   )
+                     --print(self._component.props.MapScale, prev)
+                        task.wait()
+                        
+                        local mapFrame = self.MapFrame:getValue()
+                        local mousePos = self.MousePosition
+                        local mapPos = mapFrame.Position
+                    
+                        -- Calculate the delta to maintain focus on the mouse position
+                        local scaleFactor = new / prev
+                        local delta = (input.Position - Pos) * (1 - scaleFactor)
+                    
+                        -- Apply the calculated delta to the map position
+                        UpdatePos(Pos + delta)
+
+                    --    if self.state.MapScale > 0.25 then
+                    --     local viewport = GetViewBoundary(Pos)
+                    --     local InitPos = Pos - viewport
+                        
+                    --     local delta = (input.Position - Pos) * wheel/((self.state.MapScale) * 4)
+
+                    --     UpdatePos(Pos - delta)
+                    --    end
+                    
+                    
                 end
             end)
            
@@ -214,7 +271,8 @@ Frame
             Disabled = (not state.selected),
             DisabledScale = state.MapScale,
             DisableMarkerAnimation = false,
-            SelectPosition = state.SelectPosition == roact.None and nil or state.SelectPosition
+            SelectPosition = state.SelectPosition == roact.None and nil or state.SelectPosition,
+            AnchorRelativeTo = "Mouse",
         })
     })
     

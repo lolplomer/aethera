@@ -79,9 +79,11 @@ return function (props)
             api.start {from = {hover = 1}, to = {hover = 0.7}, reset = true}
         end
 
-        local MouseLockController = Cameras.activeMouseLockController
+        --local MouseLockController = Cameras.activeMouseLockController
+        local MouseLockController = knit.GetController("MouseLockController")
         local MouseLocked = MouseLockController:GetIsMouseLocked()
         local isVisible = false
+
         local function setVisible(visible)
             
             isVisible = visible
@@ -89,30 +91,15 @@ return function (props)
             if visible and not props.Disabled then
                 canvas.current.Visible = true
                 api.start {transparency = 0}    
-                MouseLocked = MouseLockController:GetIsMouseLocked()
 
-                --MouseLockController:EnableMouseLock(false)
-                if Cameras.activeCameraController then
-                    Cameras.activeCameraController:SetIsMouseLocked(false)
-                end
+               MouseLockController:DisableMouseLock()
                 
             else
                 api.start ({transparency = 1}):andThen(function()
                     canvas.current.Visible = false
                 end)
-                
-                if Cameras.activeCameraController then
-                    print(MouseLocked, 'disabling')
-                    
-                    Cameras.activeCameraController:SetIsMouseLocked(MouseLocked)
-                    
-                end
-
-                
-                --MouseLockController:EnableMouseLock(MouseLocked)
+                MouseLockController:RestoreMouseLock()
             end
-
-          --  Cameras:OnMouseLockToggled()
         end
 
         for name, ref in refs do
@@ -161,7 +148,7 @@ return function (props)
 
             _trove:Add(InputController:OnKeybindTrigger(props.Keybind, function()
                 pressing = true 
-                task.wait(0.1)
+                --task.wait(0.1)
                 if pressing then
                     setVisible(true)
                 end   

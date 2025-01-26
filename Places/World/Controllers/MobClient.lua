@@ -78,8 +78,11 @@ function Mob:UpdateCFrame(instant)
                 CFrame = self.CFrame
             })
 
+            local track: AnimationTrack = self:GetAnimations().Running
+
             tween:Play()
             self.Tween = tween
+
         else
             root.CFrame = self.CFrame
        end
@@ -91,7 +94,7 @@ function Mob:GetStats()
     return util.GetAsync(self, 'Stats', 'Mob Replica')
 end
 
-function Mob:SetPosition(At, Direction, State, instant)
+function Mob:SetPosition(At, Direction, State, instant, ForceDirection)
     --Direction = Direction or Vector3.zero
 
     local Model = self.Model
@@ -100,12 +103,24 @@ function Mob:SetPosition(At, Direction, State, instant)
     
     local x,z = At.X, At.Z
     
+    local PrevPos = self.PrevPos
+
     local CF
-    if Direction then
+
+    local DirectionCF = Direction and CFrame.lookAlong(
+        Vector3.new(x,y,z),
+        (Direction * Vector3.new(1, 0.0001, 1)).Unit
+    )
+    if ForceDirection and Direction then
+        CF = DirectionCF
+    end
+    if (Model.HumanoidRootPart.Position - At).Magnitude > 3 then
         CF = CFrame.lookAlong(
             Vector3.new(x,y,z),
-            Direction * Vector3.new(1, 0.01, 1)
+            ((At - Model.HumanoidRootPart.Position).Unit * Vector3.new(1, 0.0001, 1)).Unit
         )
+    elseif Direction then
+        CF = DirectionCF
     else
         CF = CFrame.new(x,y,z)
     end
@@ -114,7 +129,7 @@ function Mob:SetPosition(At, Direction, State, instant)
     self.LastCFrameChange = os.clock()
     self.CFrame = CF    
     self:UpdateCFrame(instant)
-    self:SetState(State)
+    --self:SetState(self.State)
 end
 
 function Mob:GetAnimations()
@@ -159,7 +174,7 @@ function Mob:StopAllTracks()
 end
 
 function Mob:PlayTrack(trackName, category)
-   
+    --print("playing animation:",trackName)
     category = category or 'State'
     self:StopTrack(category)
 
@@ -181,7 +196,7 @@ function Mob:SetState(newState)
     if self.State ~= newState then
 
 
-       -- print('New State:', newState)
+        --print('New State:', newState, '\n', debug.traceback())
 
         
         self.State = newState
@@ -193,36 +208,131 @@ function Mob:Destroy()
     MobClient:RemoveMob(self.Model)
 end
 
-function MobClient:GetMob(model: Model)
+function Mob:StopListeningMoveChanges()
+    if self.MoveConnection then
+        self.MoveConnection:Disconnect()
+        self.MoveConnection = nil
+    end
+end
+
+function Mob:ListenToMoveChanges()
+    if not self.MoveConnection then
+        local root = self.Root 
+        self.MoveConnection = root:GetPropertyChangedSignal('CFrame'):Connect(function()
+            --print((prev-root.Position).Magnitude, 'away')
+            self:SetPosition(root.Position, root.CFrame.LookVector)
+            
+        end) 
+    end
+end
+
+function MobClient:GetMob(root: Instance)
     
-    if not model or not model:IsDescendantOf(game) then return end
-    if Mobs[model] then 
+    if not root or not root:IsDescendantOf(game) then return end
+    if Mobs[root] then 
         
         
-        Mobs[model]:SetState(model:GetAttribute('State'))    
-        return Mobs[model] 
+        Mobs[root]:SetState(root:GetAttribute('State'))    
+        return Mobs[root] 
     end
 
     local Cleaner = Trove.new()
+
+    local Model: Model = ReplicatedStorage.Models:FindFirstChild(root.Name):Clone()
+    Model.Parent = ReplicatedStorage.UnrenderedMobs
+    Model.HumanoidRootPart.Anchored = true
+
     
-    Mobs[model] = setmetatable({
-        Model = model,
+    for _, v: Instance in Model:GetDescendants() do
+        if v:IsA('BasePart') then
+            v.CanCollide = false
+        end
+    end
+
+    local Pointer = Instance.new('ObjectValue')
+    Pointer.Value = root
+    Pointer.Name = "RootPointer"
+    Pointer.Parent = Model
+
+    CollectionService:AddTag(Model.HumanoidRootPart, 'Entity')
+    CollectionService:AddTag(Model.HumanoidRootPart, 'Mob')
+
+    local humanoid: Humanoid = Model.Humanoid
+    humanoid.NameDisplayDistance = 0
+    humanoid.HealthDisplayDistance = 0
+
+    local function UpdateHealth()
+       
+        humanoid.MaxHealth = root:GetAttribute('MaxHP')
+        humanoid.Health = root:GetAttribute('HP') 
+    end
+
+    Model:SetAttribute("Level", root:GetAttribute('Level'))
+    root:GetAttributeChangedSignal('HP'):Connect(UpdateHealth)
+    root:GetAttributeChangedSignal('MaxHP'):Connect(UpdateHealth)
+
+
+    UpdateHealth()
+
+    Mobs[root] = setmetatable({
         Trove = Cleaner,
-        Module = mobs[model:GetAttribute('Module')],
-        Tracks = {}
+        Module = mobs[root:GetAttribute('Module')],
+        Tracks = {},
+        Model = Model,
+        Root = root,
         --Streamable = streamable.primary(model)
     }, Mob)
 
-    local self = Mobs[model]
+    local self = Mobs[root]
 
-    Cleaner:AttachToInstance(model)
+    if self.Humanoid then
+        for prop,value in self.Humanoid do
+            Model.Humanoid[prop] = value
+        end
+    end
 
+    self.PrevPos = root.Position
+
+
+    local modelRoot: BasePart = Model.HumanoidRootPart
+    local previousPos = modelRoot.Position
+    local last = os.clock()
+
+    local moving = false
+
+    -- modelRoot:GetPropertyChangedSignal('Position'):Connect(function()
+    --     local pos: Vector3 = modelRoot.Position
+    --     local current = os.clock()
+    --     local delta = (current - last)
+
+    --     if delta > 0 then 
+    --         local velocity = (pos - previousPos)/delta
+    --         --print(velocity.Magnitude)
+    --         if velocity.Magnitude > 0.05 then
+    --             moving = true
+                
+    --         else
+    --             moving = false
+    --         end
+    --         previousPos = pos 
+    --     end
+
+    --     if moving then
+    --         local track = self:GetAnimations().Running
+    --         track:Play()
+    --     end
+
+    --     last = current
+    -- end)
+
+    Cleaner:AttachToInstance(root)
+    Cleaner:Add(Model)
     Cleaner:Add(function()
-        Mobs[model] = nil
+        Mobs[root] = nil
     end)
-    self:SetState(model:GetAttribute('State'))    
+    self:SetState(root:GetAttribute('State'))    
 
-    return Mobs[model]
+    return Mobs[root]
 end
 
 function MobClient:RemoveMob(model)
@@ -240,6 +350,7 @@ function MobClient:KnitInit()
         local mob = MobClient:GetMob(data.Model)
         if mob then
             local track: AnimationTrack = mob:PlayTrack(data.Animation, data.Category or 'Action')
+            
             if track then
                 track.Priority = Enum.AnimationPriority.Action4
             end
@@ -254,13 +365,14 @@ function MobClient:KnitInit()
         end
     end)
 
-    packet.Unrender.listen(function(model)
+    packet.Unrender.listen(function(root)
         --print(model, 'removing')
-        local Mob = MobClient:GetMob(model)
+        local Mob = MobClient:GetMob(root)
         if Mob then
             Mob.Active = false    
             Mob:StopAllTracks()
-            model.Parent = ReplicatedStorage.UnrenderedMobs
+            Mob.Model.Parent = ReplicatedStorage.UnrenderedMobs
+            Mob:StopListeningMoveChanges()
         end
     end)
 
@@ -272,12 +384,15 @@ function MobClient:KnitInit()
         end
     end)
 
-    packet.Render.listen(function(model)
+    packet.Render.listen(function(root)
         
-        local Mob = MobClient:GetMob(model)
+        local Mob = MobClient:GetMob(root)
         if Mob then
             Mob.Active = true
-            model.Parent = workspace.Mobs
+            Mob.Model.Parent = workspace.Mobs
+            --Mob:SetPosition(root.Position, root.CFrame.LookVector, nil, true, true)
+            Mob:ListenToMoveChanges()
+        
             Mob:UpdateAnimation()
         end
         
@@ -300,17 +415,17 @@ function MobClient:KnitInit()
                 local parts = workspace:GetPartBoundsInRadius(pos, 200, params)
 
                 for _, root in parts do
-                    local Model = root.Mob.Value
 
-                    local mob = MobClient:GetMob(Model)
+                    local mob = MobClient:GetMob(root)
                     if mob and not mob.Active then
 
-                        mob:SetPosition(root.Position, nil, Model:GetAttribute('State'), true)
+                        mob:SetPosition(root.Position, (nil), root:GetAttribute('State'), true)
 
-                        packet.Render.send (Model)
+                        packet.Render.send (root)
                     end
                     
                 end
+
             end
         end)
         
@@ -357,6 +472,12 @@ function MobClient:KnitInit()
                 runtimes[id]:SetTimePosition(timepos)
             end
         end
+    end)
+
+    local SystemMonitor = Knit.GetController ('SystemMonitor')
+
+    SystemMonitor.newAttributeTracker(workspace, 'MOB_PATHFINDING_FREQUENCY', function(value)
+        return `Mob Pathfinding Calls: {value}/sec`
     end)
 end
 

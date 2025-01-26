@@ -6,7 +6,22 @@ local Models = {}
 local Trove = require(ReplicatedStorage:WaitForChild"Packages":WaitForChild"Trove")
 
 local HandlerClass = {}
-HandlerClass.__index = HandlerClass
+HandlerClass.__index = function(self, index)
+    return rawget(self,"Methods")[index] or rawget(self, index) or HandlerClass[index]
+end
+
+
+local PropertyClass = {}
+PropertyClass.__index = PropertyClass  
+
+function PropertyClass:Get() 
+    return self._instance.Instance[self._property]
+
+end
+
+function PropertyClass:Add(Value, Priority, Time)
+    return self._instance:Add(self._property, Value, Priority, Time)
+end
 
 local ValueClass = {}
 ValueClass.__index = ValueClass
@@ -29,6 +44,12 @@ function HandlerClass:Destroy()
     self.Trove:Destroy()
 end
 
+function HandlerClass:Reset(Property)
+    for _, v in self.Values[Property] do
+        v:Dispose()
+    end
+end
+
 function HandlerClass:Update(Property)
     local property = self.Values[Property]
     if property then
@@ -44,18 +65,9 @@ function HandlerClass:Update(Property)
             v = _v:GetValue()
         end
 
-       --print(Property, v)
-    --     for _, Value in property do
-    --         v = Value:GetValue()
-    --         break
-            
-    -- --        print('New value of',Property,':',Value:GetValue(),'\nAll other values:',property)
-    --         --return
-    --     end
-       --    print(property, v)
 
         if v  ~= nil then
-            if self.TWINFO and not table.find(DISABLED_TWEEN_DATATYPES, typeof(v)) then
+            if self.TWINFO and not table.find(DISABLED_TWEEN_DATATYPES, typeof(v)) and self.IsInstance then
                 TweenService:Create(self.Instance, self.TWINFO, {[Property] = v}):Play()
             else
                 self.Instance[Property] = v
@@ -63,7 +75,6 @@ function HandlerClass:Update(Property)
             end
         end
 
-        
     end
 end
 
@@ -150,18 +161,37 @@ function PriorityModule:GetHandler(Instance: Instance)
             DefaultValues = {},
             Trove = Trove.new(),
             Instance = Instance,
-            TWINFO = nil
+            TWINFO = nil,
+            IsInstance = typeof(Instance) == "Instance",
+            Methods = {},
+            id = math.random(1,100000)
         }, HandlerClass)
+
+        if typeof(Instance) == "table" then
+            for property,value in Instance do
+                local method = setmetatable({
+                    _instance = Handler,
+                    _property = property
+                }, PropertyClass)
+
+                Handler.Methods[property] = method
+
+                Handler:SetDefaultValue(property,value)
+            end
+        end
 
         Handler.Trove:Add(function()
             Models[Instance] = nil
         end)
 
-        Handler.Trove:Connect(Instance.AncestryChanged, function(_, parent)
-            if parent == nil then
-                Handler:Destroy()
-            end
-        end)
+        if Handler.IsInstance then
+            Handler.Trove:Connect(Instance.AncestryChanged, function(_, parent)
+                if parent == nil then
+                    Handler:Destroy()
+                end
+            end)    
+        end
+        
 
         Models[Instance] = Handler
     end

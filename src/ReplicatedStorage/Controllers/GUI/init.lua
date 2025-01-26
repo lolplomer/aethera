@@ -64,9 +64,10 @@ function controller.GetComponent(Element)
 end
 
 function controller:UpdateUI(name, props)
+    
     assert(Interfaces[name], `Interface named {name} doesn't exist`)
     local tree = Interfaces[name].tree
-    
+    props = props or Interfaces[name].props
     local interface = require(modules[name])
     local component = react.createElement(interface.Component or interface, props)
     tree:render(component)
@@ -220,9 +221,9 @@ end
 local function initiate(interface, interfaceModule)
     local handle
     if interface.Handle then
-        handle = interface.Handle(interfaceModule.Name)
+        handle = interface.Handle(interface.Name)
     else
-        handle = createHandle(interfaceModule.Name)
+        handle = createHandle(interface.Name)
     end
     if interface.Disabled then
         handle.Enabled = false
@@ -231,29 +232,45 @@ local function initiate(interface, interfaceModule)
     local root = react_roblox.createRoot(handle)
 
 
-    Interfaces[interfaceModule.Name] = {
+    Interfaces[interface.Name] = {
         tree = root,
         props = {Handle = handle},--{Disabled = interface.Disabled == nil and true or interface.Disabled},
         handle = handle
     }
 
-    root:render(react.createElement(interface.Component or interface, Interfaces[interfaceModule.Name].props))
-
+    root:render(react.createElement(interface.Component or interface, Interfaces[interface.Name].props))
 
     if interface.HUD then
-        controller:AddToGroup(interfaceModule.Name, 'HUD')
+        controller:AddToGroup(interface.Name, 'HUD')
     end
 
 end
 
-function controller:LoadInterface(interfaceModule: ModuleScript)
-    modules[interfaceModule.Name] = interfaceModule
+function controller:IsLoaded(name)
+    return Interfaces[name] ~= nil
+end
+
+function controller:UnloadInterface(name)
+    if Interfaces[name] then
+        Interfaces[name].tree:unmount();
+        Interfaces[name].handle:Destroy();
+    end
+    modules[name] = nil;
+    Interfaces[name] = nil;
+end
+controller.Unload = controller.UnloadInterface
+
+function controller:LoadInterface(interfaceModule: ModuleScript, name: string)
+
+    name = name or interfaceModule.Name
+    modules[name] = interfaceModule
     local interface = require(interfaceModule)
-            
-    interface.Name = interfaceModule.Name
+    
+    interface.Name = name
     
     xpcall(initiate, warn, interface, interfaceModule)
 end
+controller.Load = controller.LoadInterface
 
 function controller:LoadFolder(folder: Folder)
     for _,v in folder:GetChildren() do
@@ -295,6 +312,8 @@ function controller:KnitStart()
  
     self:LoadFolder(interfaceModules)
     self:LoadFolder(ReplicatedStorage.PlaceShared.Interfaces)
+
+    controller.Started = true;
 end
 
 return controller

@@ -183,7 +183,7 @@ function MainMenuController:KnitStart()
 
         RigPreview.HumanoidRootPart.Anchored = true
         Humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-        Humanoid.HealthDisplayDistance = Enum.HumanoidHealthDisplayType.AlwaysOff
+        -- Humanoid.HealthDisplayDistance = Enum.HumanoidHealthDisplayType.AlwaysOff
 
         local Track: AnimationTrack = Util.LoadAnimation(RigPreview, IdleAnimationId)
         Track:Play()

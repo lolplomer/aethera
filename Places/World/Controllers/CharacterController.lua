@@ -20,6 +20,7 @@ CharacterController.StateChanged = Signal.new()
 CharacterController.StaminaChanged = Signal.new()
 
 local packet = require(ReplicatedStorage.Packets.Combat)
+local Priority = require(ReplicatedStorage.Utilities.Priority)
 
 local Char
 
@@ -31,6 +32,7 @@ local State = {
 function CharacterController:KnitStart()
     
     Util.CharacterAdded(Player, function(Character: Model)
+
         Char = CharacterModule:Initialize(Character)
 
         Char.StateChanged:Connect(function(state, index)
@@ -42,6 +44,11 @@ function CharacterController:KnitStart()
         Char.StaminaChanged:Connect(function(stamina, max)
             self.StaminaChanged:Fire(stamina, max)
         end)
+
+        task.wait(3)
+        local Loading = Knit.GetController('LoadingController')
+        Loading:Disable()
+
     end, false)
 end
 
@@ -83,7 +90,9 @@ function CharacterController:CastNormalAttack()
             Parent = result.Instance,
             CFrame = CFrame.new(result.Position)
         })
-        packet.NormalAttack.send(Model)
+
+        local MobRootPointer = Model:FindFirstChild("RootPointer")
+        packet.NormalAttack.send(MobRootPointer and MobRootPointer.Value or Model)
         
        -- print('Hit', Model)
     end
@@ -94,7 +103,20 @@ function CharacterController:ChangeState(state, index)
         index = index or 1
         Char:ChangeState(state, index)
     end
+end
 
+function CharacterController:DisableStates()
+    if Char then
+        print('Setting state to busy')
+        Char:ChangeState('Busy')
+    end
+end
+
+function CharacterController:EnableStates()
+    if Char then
+        warn('Disabling states')
+        Char:CancelAction('Busy')
+    end
 end
 
 function CharacterController:GetState()

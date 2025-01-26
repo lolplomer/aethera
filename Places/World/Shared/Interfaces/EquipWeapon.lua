@@ -36,9 +36,9 @@ local function component(props)
 
 
     return roact.createElement('CanvasGroup', {
-        Size = UDim2.fromScale(.18,.18),
-        Position = UDim2.new(.98,0,.98,0),
-        AnchorPoint = Vector2.new(1,1),
+        Size = UDim2.fromScale(.15,.15),
+        Position = UDim2.new(.68,0,1,0),
+        AnchorPoint = Vector2.new(0,1),
         BackgroundTransparency = 1,
         GroupTransparency = transparency.value
     }, {

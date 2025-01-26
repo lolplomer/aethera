@@ -14,15 +14,25 @@ local InputConverter = require(InputFolder:WaitForChild"Converter")
 InputController.KeybindTriggered = Signal.new()
 InputController.KeybindTriggerEnded = Signal.new()
 
+InputController.InGui = false
+InputController.GuiKeybind = nil
+
 local KeybindTriggered = BridgeNet2.ReferenceBridge('KeybindTriggered')
 local ChangeKeybind = BridgeNet2.ReferenceBridge('ChangeKeybind')
 
+local function CheckGuiKeybind(keybind)
+    return InputController.InGui == false or keybind == InputController.GuiKeybind
+    
+end
+
 local function BeginCapturingKeybindInputs()
     UIS.InputBegan:Connect(function(inputObject, gameProcessedEvent)
+        
         if gameProcessedEvent then return end
         local input = InputConverter:ConvertInputObject(inputObject)
         local keybind, index = InputController:FindKeybindFromInput(input)
-        if keybind ~= nil then
+        if keybind ~= nil and CheckGuiKeybind(keybind) then
+            
            InputController.KeybindTriggered:Fire(keybind, index) 
            KeybindTriggered:Fire({keybind, index})
         end
@@ -31,7 +41,7 @@ local function BeginCapturingKeybindInputs()
     UIS.InputEnded:Connect(function(inputObject)
         local input = InputConverter:ConvertInputObject(inputObject)
         local keybind, index = InputController:FindKeybindFromInput(input)
-        if keybind ~= nil then
+        if keybind ~= nil and CheckGuiKeybind(keybind) then
            InputController.KeybindTriggerEnded:Fire(keybind, index) 
         end
     end)
@@ -55,6 +65,14 @@ local function RemapShiftLockKeys(KEYS: string)
         obj.Value = KEYS
         obj.Parent = mouseLockController
     end
+end
+
+function InputController:TriggerKeybind(KeybindName, index)
+    self.KeybindTriggered:Fire(KeybindName, index)
+end
+
+function InputController:EndKeybindTrigger(keybindName, index)
+    self.KeybindTriggerEnded:Fire(keybindName, index)
 end
 
 function InputController:OnKeybindTrigger(KeybindName, Fn)
@@ -103,7 +121,7 @@ end
 
 function InputController:KnitStart()
    BeginCapturingKeybindInputs()
-   RemapShiftLockKeys('LeftControl,RightControl')
+   --RemapShiftLockKeys('LeftControl,RightControl')
 end
 
 

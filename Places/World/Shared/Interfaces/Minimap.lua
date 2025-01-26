@@ -50,11 +50,15 @@ function HUD:didMount()
             local pos = Vector2.new( CF.Position.X,CF.Position.Z)
     
             local mapFrame = self.MinimapFrame:getValue()
+            
             local abs = mapFrame.Parent.AbsoluteSize
             local init = mapSettings.InitialPosition
     
             local center = Vector2.new(abs.X/2,abs.Y/2)
-            mapFrame.Position = UDim2.fromOffset(center.X-pos.X+init.X/2,center.Y-pos.Y+init.Y/2)
+            mapFrame.Position = UDim2.fromOffset(
+                center.X-pos.X+init.X/2,
+                center.Y-pos.Y+init.Y/2
+            )
         end
     end)
 end

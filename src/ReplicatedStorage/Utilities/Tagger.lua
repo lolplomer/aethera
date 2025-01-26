@@ -38,8 +38,6 @@ function Tagger:Tag(tagger, point)
     if self.CombatData then
         self.CombatData.DamageTaken:Fire(tagger, point)
     end
-
-    print(tagger, point, self._taggers)
 end
 
 function Tagger:GetLastTag()

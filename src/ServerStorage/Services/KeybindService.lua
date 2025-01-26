@@ -38,6 +38,7 @@ function KeybindService:KnitInit()
     PlayerDataService:AwaitLoad("Keybind")
 
     self:SetDefaultKeybind('Interact', Enum.KeyCode.F)
+    self:SetDefaultKeybind('MouseLock', Enum.KeyCode.LeftControl)
 end
 
 function KeybindService:SetObjectInteract(Object: BasePart, ActionText: string)

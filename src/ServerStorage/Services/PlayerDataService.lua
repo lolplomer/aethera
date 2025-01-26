@@ -1,5 +1,5 @@
-local UseMockOnStudio = true
-local StoreName = "PlayerDataTEST5"
+local UseMockOnStudio = false
+local StoreName = "PlayerDataTEST6"
 
 local packages = game.ReplicatedStorage.Packages
 local knit = require(packages.Knit)
@@ -31,9 +31,14 @@ service.PlayerAdded = signal.new()
 local PlayerData = {}
 local LoadWait = {}
 
+local onReleaseCallbacks = {}
+
 local function onPlayerLeave(player)
     if PlayerData[player] then
         print(`{player.Name} left the server, successfully released their profile`)
+        for _, callback in onReleaseCallbacks do
+            xpcall(callback, warn, player, PlayerData[player])
+        end
         PlayerData[player].Profile:Release()
     end
 end
@@ -91,6 +96,15 @@ local function onPlayerJoin(player:Player)
             print(`{index or "whole data"} has a size of {size}, and used {percentage}% of space`)
         end
     end)
+end
+
+function service:BindOnRelease(callback)
+    if typeof(callback) == 'function' then
+        table.insert(onReleaseCallbacks, callback)
+        return
+    end
+
+    error('Callback must be a function')
 end
 
 function service:GetPlayerData(player)

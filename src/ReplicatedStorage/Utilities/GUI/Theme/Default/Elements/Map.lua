@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SocialService = game:GetService("SocialService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local mapSettings = require(ReplicatedStorage:WaitForChild"GameModules":WaitForChild"MapSettings")
 
 local roact = require(game.ReplicatedStorage:WaitForChild('Utilities'):WaitForChild('Roact'))
@@ -30,6 +31,19 @@ function map:init()
     self.animateTime = os.clock()
     self.Players = {}
     self:setState({update = 0})
+
+    self.Test = roact.createRef()
+    self.AnchorPosition = Vector2.new()
+
+    if self.props.AnchorRelativeTo == "Mouse" then
+        warn("Map is relative to Mouse")
+        self.Cleaner:Connect(UserInputService.InputChanged, function(input: InputObject)
+            if input.UserInputType ==Enum.UserInputType.MouseMovement then
+                self.AnchorPosition = Vector2.new(input.Position.X, input.Position.Y)
+            end
+        end)
+    end
+    
 
     self:CreatePlayerMarker()
 end
@@ -117,7 +131,7 @@ function map:UpdateMarkerPosition(Markers, dt, initScale, onlySelectionMarker)
     end
 end
 
-function map:didMount()
+function map:componentDidMount()
     if not self.props.Disabled then
         self:Initiate()    
     end
@@ -158,7 +172,7 @@ end
 
 function map:WorldToMapPosition(worldPos:Vector3)
     local init = mapSettings.InitialPosition
-    local scale = self.props.Scale
+    local scale = self.props.Scale or 1
     local x,y = worldPos.X, worldPos.Z
     return Vector2.new(
         (x-init.X/2)*scale, --+ (x*scale - x), --* easeInOutQuad(t),
@@ -204,7 +218,6 @@ end
 function map:setMapScale(scale)
     local mapFrame = self.props["_ref"]:getValue()
     local initPos = mapSettings.InitialPosition
-
     for _, v:ImageLabel in mapFrame:GetChildren() do
         if v:IsA('ImageLabel') then
             local info = mapSettings.MapImages[tonumber(v.Name)]
@@ -219,9 +232,28 @@ function map:setMapScale(scale)
             -- v.Position = v.Position:Lerp(UDim2.fromOffset(_x*scale,_y*scale),t)
         end
     end
+
+    --self:UpdateAllMarkers(scale)
 end
 
-function map:didUpdate(prevProps)
+function map:UpdateAllMarkers(scale)
+    local MarkerContainer = self.MarkerRef:getValue()
+    local PlayerMarkers = MarkerContainer.Players
+    local Markers = MarkerContainer.Markers
+
+    -- Update player markers
+    -- for _, playerMarker in PlayerMarkers:GetChildren() do
+    --     local position = playerMarker.Position
+    --     local targetPosition = position * scale
+    --     playerMarker.Position = playerMarker.Position:Lerp(targetPosition, 0.5)
+    -- end
+
+    -- Update other markers (waypoints)
+    self:UpdateMarkerPosition(Markers, 0.5)
+    self:UpdatePlayerPosition(PlayerMarkers, 0.5)
+end
+
+function map:componentDidUpdate(prevProps)
 
    -- local mapFrame = self.props["ref"]:getValue()
     
@@ -262,7 +294,6 @@ function map:render()
     local mapImages = {}
 
    -- print(scale)
-
     for i,v in mapSettings.MapImages do
         local x,y = v.Center.X - mapSettings.InitialPosition.X/2, v.Center.Y-mapSettings.InitialPosition.Y/2
         mapImages[i] = roact.createElement('ImageLabel', {
@@ -305,8 +336,16 @@ function map:render()
     return roact.createElement('Frame', {
         Size = UDim2.fromScale(0,0),
         AnchorPoint = Vector2.new(.5,.5),
-        ["ref"] = self.props._ref
+        ["ref"] = self.props._ref,
     }, {
+        -- test = roact.createElement('Frame', {
+        --     AnchorPoint = Vector2.new(.5,.5), 
+        --     Size = UDim2.fromOffset(5,5), 
+        --     ZIndex = 10,
+        --     Position = UDim2.fromOffset(self.AnchorPosition.X,self.AnchorPosition.Y),
+        --     ref = self.Test,
+             
+        -- }),
         Map = roact.createElement(roact.Fragment, nil, mapImages),
         MarkerContainer = GUI.newElement('BlankFrame', {
             ClipsDescendants=false,

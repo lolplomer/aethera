@@ -28,7 +28,7 @@ function action.Initiate(mob)
                     Number2 = 180
                 })
 
-                task.wait(0.15)
+                task.wait(0.2)
                 local result: RaycastResult = mob:CastSingleTargetAttack(6, 6, targetPlayer.Character)
                 if result then
                     EffectService:SpawnEffect('Hit', {

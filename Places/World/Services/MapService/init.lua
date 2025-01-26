@@ -8,6 +8,7 @@ local MapService = Knit.CreateService {
 
 local PlayerDataService
 
+
 local function getAvailableId(t)
     local id = 0
     while t[tostring(id)] do
@@ -24,12 +25,23 @@ end
 function MapService:KnitInit()
     PlayerDataService = Knit.GetService"PlayerDataService"
 
+    self.Waypoints = require(script.Waypoints)
+
     PlayerDataService:RegisterDataIndex("Map", {
-        Markers = {}
+        Markers = {},
+        LastPosition = {0,0},
     })
+
+    PlayerDataService.PlayerAdded:Connect(function(player: Player, playerData)
+
+
+
+        self.Waypoints.PlayerAdded(player, playerData)
+    end)
 
     local KeybindService = Knit.GetService("KeybindService")
     KeybindService:SetDefaultKeybind('Map', Enum.KeyCode.M)
+
 end
 
 function MapService.Client:AddMarker(player:Player, worldPosition:Vector3, Name:string)

@@ -76,10 +76,12 @@ windowManager.__index = windowManager
 
 local selectedWindow, pendingWindow = nil, nil
 
-function windowManager:SwitchWindow(WindowName, BypassDebounce)
+function windowManager:SwitchWindow(WindowName, BypassDebounce, keybind)
     local window = windows[WindowName]
     local current = selectedWindow
 
+    local InputController = knit.GetController("InputController")
+    local MouseLockController = knit.GetController("MouseLockController")
     --print('Switching window',WindowName)
 
     if not Util.Debounce('WindowSwitch', 1) and not BypassDebounce then
@@ -91,12 +93,15 @@ function windowManager:SwitchWindow(WindowName, BypassDebounce)
         current.DisableBlur:Play()
         current._component:close()
         current._component:setState {selected = false}
+        InputController.InGui = false
+        
 
         if not pendingWindow then
             GUI:EnableAll(true)
             RevertCoreGui()
             --SetCoreGuiEnabled(true)
             IconManager.Controller.setTopbarEnabled(true)
+            MouseLockController:RestoreMouseLock()
         end
         
     elseif window then 
@@ -126,6 +131,12 @@ function windowManager:SwitchWindow(WindowName, BypassDebounce)
 
         IconManager.Controller.setTopbarEnabled(false)
         SetCoreGuiDisabled()
+        InputController.InGui = true
+        MouseLockController:DisableMouseLock()
+
+        if keybind ~= nil then
+            InputController.GuiKeybind = keybind
+        end
         --SetCoreGuiEnabled(false) 
     end
     
@@ -306,7 +317,7 @@ function windowManager.new(WindowName, props)
             -- SetCoreGuiEnabled(false)
             -- self:open()
             -- self:setState {selected = true}
-            windowManager:SwitchWindow(WindowName)    
+            windowManager:SwitchWindow(WindowName, false, props.Keybind)    
         end)
         -- :bindEvent("deselected", function()
         --     -- DisableBlur:Play()
@@ -337,7 +348,7 @@ function windowManager.new(WindowName, props)
                     windowManager:SwitchWindow()
                     --icon:deselect()
                 else
-                    windowManager:SwitchWindow(WindowName)
+                    windowManager:SwitchWindow(WindowName, false, props.Keybind)
                 end
             end)
         end
